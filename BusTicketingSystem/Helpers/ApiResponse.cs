@@ -1,0 +1,49 @@
+﻿public class ApiResponse<T>
+{
+    public bool Success { get; set; }
+    public string Message { get; set; } = string.Empty;
+    public T? Data { get; set; }
+
+    // ✔ When returning only data
+    public static ApiResponse<T> SuccessResponse(T data)
+    {
+        return new ApiResponse<T>
+        {
+            Success = true,
+            Message = "Operation successful",
+            Data = data
+        };
+    }
+
+    // ✔ When returning only message
+    public static ApiResponse<T> SuccessResponse(string message)
+    {
+        return new ApiResponse<T>
+        {
+            Success = true,
+            Message = message,
+            Data = default
+        };
+    }
+
+    // ✔ When returning both
+    public static ApiResponse<T> SuccessResponse(string message, T data)
+    {
+        return new ApiResponse<T>
+        {
+            Success = true,
+            Message = message,
+            Data = data
+        };
+    }
+
+    public static ApiResponse<T> FailureResponse(string message)
+    {
+        return new ApiResponse<T>
+        {
+            Success = false,
+            Message = message,
+            Data = default
+        };
+    }
+}
