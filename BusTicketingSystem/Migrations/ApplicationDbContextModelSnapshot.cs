@@ -209,9 +209,6 @@ namespace BusTicketingSystem.Migrations
                     b.Property<DateTime>("DepartureTime")
                         .HasColumnType("datetime2");
 
-                    b.Property<decimal>("Fare")
-                        .HasColumnType("decimal(10,2)");
-
                     b.Property<bool>("IsActive")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("bit")
@@ -224,6 +221,12 @@ namespace BusTicketingSystem.Migrations
 
                     b.Property<int>("RouteId")
                         .HasColumnType("int");
+
+                    b.Property<int>("TotalSeats")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("TravelDate")
+                        .HasColumnType("datetime2");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");

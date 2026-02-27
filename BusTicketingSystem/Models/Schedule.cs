@@ -5,34 +5,39 @@ namespace BusTicketingSystem.Models
 {
     public class Schedule
     {
+        [Key]
         public int ScheduleId { get; set; }
 
-        // 🔗 Foreign Keys
-        public int BusId { get; set; }
-        public Bus Bus { get; set; } = null!;
-
+        [Required]
         public int RouteId { get; set; }
+
+        [ForeignKey("RouteId")]
         public Route Route { get; set; } = null!;
 
-        // 🕒 Timing
+        [Required]
+        public int BusId { get; set; }
+
+        [ForeignKey("BusId")]
+        public Bus Bus { get; set; } = null!;
+
+        [Required]
+        public DateTime TravelDate { get; set; }
+
         [Required]
         public DateTime DepartureTime { get; set; }
 
         [Required]
         public DateTime ArrivalTime { get; set; }
 
-        // 💰 Pricing
-        [Column(TypeName = "decimal(10,2)")]
-        public decimal Fare { get; set; }
+        [Required]
+        public int TotalSeats { get; set; }
 
-        // 🪑 Seat Tracking (initially equals Bus.TotalSeats)
+        [Required]
         public int AvailableSeats { get; set; }
 
-        // 🔒 Status
         public bool IsActive { get; set; } = true;
         public bool IsDeleted { get; set; } = false;
 
-        // 🧾 Audit Fields
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public DateTime? UpdatedAt { get; set; }
     }

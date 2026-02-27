@@ -101,8 +101,8 @@ namespace BusTicketingSystem.Data
                     .OnDelete(DeleteBehavior.Restrict);
 
                 // 💰 Decimal Precision
-                entity.Property(s => s.Fare)
-                    .HasColumnType("decimal(10,2)");
+                //entity.Property(s => s.Fare)
+                //    .HasColumnType("decimal(10,2)");
 
                 // 🕒 Required Fields
                 entity.Property(s => s.DepartureTime)
