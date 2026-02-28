@@ -18,6 +18,18 @@ namespace BusTicketingSystem.Data
         public DbSet<Models.Route> Routes { get; set; }
         public DbSet<Schedule> Schedules { get; set; }
 
+        public DbSet<Booking> Bookings { get; set; }
+        public DbSet<Seat> Seats { get; set; }
+        public DbSet<SeatLock> SeatLocks { get; set; }
+
+        // Payment and Refund
+        public DbSet<Payment> Payments { get; set; }
+        public DbSet<Refund> Refunds { get; set; }
+
+        // Passenger and Policies
+        public DbSet<Passenger> Passengers { get; set; }
+        public DbSet<CancellationPolicy> CancellationPolicies { get; set; }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);

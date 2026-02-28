@@ -1,0 +1,305 @@
+﻿using BusTicketingSystem.DTOs.Requests;
+using BusTicketingSystem.DTOs.Responses;
+using BusTicketingSystem.Interfaces.Repositories;
+using BusTicketingSystem.Interfaces.Services;
+using BusTicketingSystem.Models;
+using BusTicketingSystem.Models.Enums;
+
+namespace BusTicketingSystem.Services
+{
+    public class BookingService : IBookingService
+    {
+        private readonly IBookingRepository _bookingRepository;
+        private readonly IScheduleRepository _scheduleRepository;
+        private readonly ISeatRepository _seatRepository;
+        private readonly ISeatService _seatService;
+        private readonly IAuditRepository _auditRepository;
+
+        public BookingService(
+            IBookingRepository bookingRepository,
+            IScheduleRepository scheduleRepository,
+            ISeatRepository seatRepository,
+            ISeatService seatService,
+            IAuditRepository auditRepository)
+        {
+            _bookingRepository = bookingRepository;
+            _scheduleRepository = scheduleRepository;
+            _seatRepository = seatRepository;
+            _seatService = seatService;
+            _auditRepository = auditRepository;
+        }
+
+        // 🎟 CREATE BOOKING
+        /// <summary>
+        /// Create booking with previously locked seats
+        /// - Validates all seats are locked by the user
+        /// - Converts locked seats to booked
+        /// - Updates schedule available seats
+        /// - Creates audit log
+        /// </summary>
+        public async Task<ApiResponse<BookingResponseDto>> CreateBookingAsync(
+            CreateBookingRequestDto dto,
+            int userId,
+            string ipAddress)
+        {
+            if (dto.SeatNumbers == null || dto.SeatNumbers.Count == 0)
+                throw new Exception("At least one seat must be selected.");
+
+            var schedule = await _scheduleRepository.GetByIdAsync(dto.ScheduleId);
+
+            if (schedule == null || schedule.IsDeleted || !schedule.IsActive)
+                throw new Exception("Invalid schedule.");
+
+            // Travel date check
+            DateTime departureDateTime =
+                schedule.TravelDate.Add(schedule.DepartureTime);
+
+            if (departureDateTime <= DateTime.UtcNow)
+                throw new Exception("Cannot book after departure time.");
+
+            if (dto.SeatNumbers.Count > schedule.AvailableSeats)
+                throw new Exception("Not enough seats available.");
+
+            // Start transaction for atomic booking
+            using (var transaction = await _scheduleRepository.BeginTransactionAsync())
+            {
+                try
+                {
+                    // Verify all seats are locked by this user
+                    var seats = await _seatRepository.GetSeatsByNumbersAsync(dto.ScheduleId, dto.SeatNumbers);
+
+                    foreach (var seatNumber in dto.SeatNumbers)
+                    {
+                        var seat = seats.FirstOrDefault(s => s.SeatNumber == seatNumber);
+
+                        if (seat == null)
+                            throw new Exception($"Seat {seatNumber} not found.");
+
+                        if (seat.SeatStatus != "Locked")
+                            throw new Exception($"Seat {seatNumber} is not locked. Please lock seats before booking.");
+
+                        if (seat.LockedByUserId != userId)
+                            throw new Exception($"Seat {seatNumber} is not locked by you.");
+                    }
+
+                    // Create booking record
+                    decimal seatPrice = 500; // Static for now (later from route)
+                    decimal totalAmount = dto.SeatNumbers.Count * seatPrice;
+
+                    var booking = new Booking
+                    {
+                        UserId = userId,
+                        ScheduleId = dto.ScheduleId,
+                        NumberOfSeats = dto.SeatNumbers.Count,
+                        TotalAmount = totalAmount,
+                        BookingStatus = BookingStatus.Pending,
+                        BookingDate = DateTime.UtcNow
+                    };
+
+                    await _bookingRepository.AddAsync(booking);
+                    await _bookingRepository.SaveChangesAsync();
+
+                    // Convert locked seats to booked
+                    await _seatService.ConfirmBookingSeatsAsync(
+                        booking.BookingId,
+                        dto.ScheduleId,
+                        dto.SeatNumbers,
+                        userId);
+
+                    // Deduct seats from schedule
+                    schedule.AvailableSeats -= dto.SeatNumbers.Count;
+                    await _scheduleRepository.UpdateAsync(schedule);
+                    await _scheduleRepository.SaveChangesAsync();
+
+                    // Audit log
+                    await _auditRepository.LogAuditAsync(
+                        "CREATE",
+                        "Booking",
+                        booking.BookingId.ToString(),
+                        null,
+                        new { bookingId = booking.BookingId, seats = dto.SeatNumbers, amount = totalAmount },
+                        userId,
+                        ipAddress);
+
+                    await transaction.CommitAsync();
+
+                    return ApiResponse<BookingResponseDto>
+                        .SuccessResponse(MapToDto(booking));
+                }
+                catch (Exception ex)
+                {
+                    await transaction.RollbackAsync();
+                    throw;
+                }
+            }
+        }
+
+        // 👤 USER BOOKINGS
+        public async Task<ApiResponse<List<BookingResponseDto>>>
+            GetMyBookingsAsync(int userId)
+        {
+            var bookings = await _bookingRepository.GetByUserIdAsync(userId);
+
+            return ApiResponse<List<BookingResponseDto>>
+                .SuccessResponse(bookings.Select(MapToDto).ToList());
+        }
+
+        // 🛠 ADMIN BOOKINGS
+        public async Task<ApiResponse<List<BookingResponseDto>>>
+            GetAllBookingsAsync()
+        {
+            var bookings = await _bookingRepository.GetAllAsync();
+
+            return ApiResponse<List<BookingResponseDto>>
+                .SuccessResponse(bookings.Select(MapToDto).ToList());
+        }
+
+        // 📋 GET BOOKING BY ID WITH DETAILS
+        public async Task<ApiResponse<BookingDetailResponseDto>> GetBookingByIdAsync(int bookingId)
+        {
+            var booking = await _bookingRepository.GetByIdAsync(bookingId);
+
+            if (booking == null || booking.IsDeleted)
+                throw new Exception("Booking not found.");
+
+            var schedule = await _scheduleRepository.GetByIdAsync(booking.ScheduleId);
+
+            if (schedule == null)
+                throw new Exception("Schedule not found.");
+
+            if (schedule.Route == null || schedule.Bus == null)
+                throw new Exception("Schedule details are incomplete.");
+
+            var bookingDetail = new BookingDetailResponseDto
+            {
+                BookingId = booking.BookingId,
+                ScheduleId = booking.ScheduleId,
+                NumberOfSeats = booking.NumberOfSeats,
+                TotalAmount = booking.TotalAmount,
+                BookingStatus = booking.BookingStatus.ToString(),
+                BookingDate = booking.BookingDate,
+                
+                // Route Details
+                RouteId = schedule.Route.RouteId,
+                Source = schedule.Route.Source,
+                Destination = schedule.Route.Destination,
+                
+                // Bus Details
+                BusId = schedule.Bus.BusId,
+                BusNumber = schedule.Bus.BusNumber,
+                BusType = schedule.Bus.BusType,
+                TotalSeats = schedule.Bus.TotalSeats,
+                OperatorName = schedule.Bus.OperatorName,
+                RatingAverage = schedule.Bus.RatingAverage,
+                
+                // Schedule Details
+                TravelDate = schedule.TravelDate,
+                DepartureTime = schedule.DepartureTime,
+                ArrivalTime = schedule.ArrivalTime,
+                AvailableSeats = schedule.AvailableSeats
+            };
+
+            return ApiResponse<BookingDetailResponseDto>
+                .SuccessResponse(bookingDetail);
+        }
+
+        // ❌ CANCEL BOOKING
+        /// <summary>
+        /// Cancel booking and release booked seats back to available
+        /// - Validates booking exists and user can cancel
+        /// - Releases booked seats
+        /// - Updates schedule available seats
+        /// - Creates audit log
+        /// </summary>
+        public async Task<ApiResponse<bool>> CancelBookingAsync(
+            int bookingId,
+            int userId,
+            string role,
+            string ipAddress)
+        {
+            var booking = await _bookingRepository.GetByIdAsync(bookingId);
+
+            if (booking == null || booking.IsDeleted)
+                throw new Exception("Booking not found.");
+
+            if (role == "User" && booking.UserId != userId)
+                throw new Exception("Unauthorized access.");
+
+            if (booking.BookingStatus == BookingStatus.Cancelled)
+                throw new Exception("Booking already cancelled.");
+
+            var schedule = await _scheduleRepository
+                .GetByIdAsync(booking.ScheduleId);
+
+            if (schedule == null)
+                throw new Exception("Schedule not found.");
+
+            DateTime departureDateTime =
+                schedule.TravelDate.Add(schedule.DepartureTime);
+
+            if (departureDateTime <= DateTime.UtcNow)
+                throw new Exception("Cannot cancel after departure.");
+
+            using (var transaction = await _scheduleRepository.BeginTransactionAsync())
+            {
+                try
+                {
+                    // Get booked seats for this booking
+                    var seats = await _seatRepository.GetSeatsByScheduleIdAsync(booking.ScheduleId);
+                    var bookedSeats = seats.Where(s => s.BookingId == bookingId && s.SeatStatus == "Booked").ToList();
+
+                    if (bookedSeats.Count > 0)
+                    {
+                        var seatNumbers = bookedSeats.Select(s => s.SeatNumber).ToList();
+
+                        // Release booked seats back to available
+                        await _seatService.ReleaseBookingSeatsAsync(booking.ScheduleId, seatNumbers);
+
+                        // Restore seats to schedule
+                        schedule.AvailableSeats += bookedSeats.Count;
+                    }
+
+                    // Update booking status
+                    booking.BookingStatus = BookingStatus.Cancelled;
+                    booking.LastStatusChangeAt = DateTime.UtcNow;
+
+                    await _scheduleRepository.UpdateAsync(schedule);
+                    await _bookingRepository.UpdateAsync(booking);
+                    
+                    // Audit log
+                    await _auditRepository.LogAuditAsync(
+                        "CANCEL",
+                        "Booking",
+                        booking.BookingId.ToString(),
+                        null,
+                        new { bookingId, seatsReleased = bookedSeats.Count },
+                        userId,
+                        ipAddress);
+
+                    await _bookingRepository.SaveChangesAsync();
+                    await transaction.CommitAsync();
+
+                    return ApiResponse<bool>.SuccessResponse(true);
+                }
+                catch (Exception ex)
+                {
+                    await transaction.RollbackAsync();
+                    throw;
+                }
+            }
+        }
+
+        private BookingResponseDto MapToDto(Booking b)
+        {
+            return new BookingResponseDto
+            {
+                BookingId = b.BookingId,
+                ScheduleId = b.ScheduleId,
+                NumberOfSeats = b.NumberOfSeats,
+                TotalAmount = b.TotalAmount,
+                BookingStatus = b.BookingStatus.ToString(),
+                BookingDate = b.BookingDate
+            };
+        }
+    }
+}

@@ -1,4 +1,5 @@
 ﻿using BusTicketingSystem.Models;
+using Microsoft.EntityFrameworkCore.Storage;
 
 namespace BusTicketingSystem.Interfaces.Repositories
 {
@@ -32,5 +33,7 @@ namespace BusTicketingSystem.Interfaces.Repositories
             string fromCity,
             string toCity,
             DateTime travelDate);
+
+        Task<IDbContextTransaction> BeginTransactionAsync();
     }
 }

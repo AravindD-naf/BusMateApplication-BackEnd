@@ -2,6 +2,7 @@
 using BusTicketingSystem.Interfaces.Repositories;
 using BusTicketingSystem.Models;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
 
 namespace BusTicketingSystem.Repositories
 {
@@ -133,6 +134,11 @@ namespace BusTicketingSystem.Repositories
                     s.AvailableSeats > 0)
                 .OrderBy(s => s.DepartureTime)
                 .ToListAsync();
+        }
+
+        public async Task<IDbContextTransaction> BeginTransactionAsync()
+        {
+            return await _context.Database.BeginTransactionAsync();
         }
     }
 }

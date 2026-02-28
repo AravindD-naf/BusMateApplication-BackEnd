@@ -6,6 +6,7 @@ using BusTicketingSystem.Interfaces.Services;
 using BusTicketingSystem.Models;
 using System.Net;
 using System.Security.Claims;
+using UnauthorizedAccessException = BusTicketingSystem.Exceptions.UnauthorizedAccessException;
 
 namespace BusTicketingSystem.Services
 {

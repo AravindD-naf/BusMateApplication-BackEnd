@@ -25,6 +25,19 @@ builder.Services.AddScoped<IRouteRepository, RouteRepository>();
 builder.Services.AddScoped<IRouteService, RouteService>();
 builder.Services.AddScoped<IScheduleRepository, ScheduleRepository>();
 builder.Services.AddScoped<IScheduleService, ScheduleService>();
+builder.Services.AddScoped<IBookingService, BookingService>();
+builder.Services.AddScoped<IBookingRepository, BookingRepository>();
+builder.Services.AddScoped<ISeatRepository, SeatRepository>();
+builder.Services.AddScoped<ISeatLockRepository, SeatLockRepository>();
+builder.Services.AddScoped<ISeatService, SeatService>();
+
+// Payment & Refund Services
+builder.Services.AddScoped<IPaymentRepository, PaymentRepository>();
+builder.Services.AddScoped<IRefundRepository, RefundRepository>();
+builder.Services.AddScoped<IPassengerRepository, PassengerRepository>();
+builder.Services.AddScoped<ICancellationPolicyRepository, CancellationPolicyRepository>();
+builder.Services.AddScoped<IPaymentService, PaymentService>();
+builder.Services.AddScoped<IPassengerService, PassengerService>();
 
 // DATABASE
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
@@ -94,11 +107,29 @@ builder.Services.AddHttpContextAccessor();
 
 builder.Services.AddControllers();
 
+// SWAGGER/OPENAPI
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();
+
 var app = builder.Build();
+
+// CONFIGURE HTTPS AND PORTS
+if (!app.Environment.IsDevelopment())
+{
+    app.UseHsts();
+}
+
+app.UseSwagger();
+app.UseSwaggerUI(options =>
+{
+    options.SwaggerEndpoint("/swagger/v1/swagger.json", "Bus Ticketing System API v1");
+    options.RoutePrefix = "swagger";
+});
 
 // MIDDLEWARE PIPELINE
 app.UseMiddleware<ExceptionMiddleware>();
 
+app.UseHttpsRedirection();
 app.UseRateLimiter();
 
 app.UseAuthentication();
