@@ -24,10 +24,10 @@ namespace BusTicketingSystem.Models
         public DateTime TravelDate { get; set; }
 
         [Required]
-        public DateTime DepartureTime { get; set; }
+        public TimeSpan DepartureTime { get; set; }
 
         [Required]
-        public DateTime ArrivalTime { get; set; }
+        public TimeSpan ArrivalTime { get; set; }
 
         [Required]
         public int TotalSeats { get; set; }
@@ -40,5 +40,6 @@ namespace BusTicketingSystem.Models
 
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public DateTime? UpdatedAt { get; set; }
+
     }
 }

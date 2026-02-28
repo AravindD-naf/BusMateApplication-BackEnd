@@ -121,7 +121,7 @@ namespace BusTicketingSystem.Data
                     .HasDefaultValueSql("GETUTCDATE()");
 
                 // 🔒 Composite Unique Constraint
-                entity.HasIndex(s => new { s.BusId, s.RouteId, s.DepartureTime })
+                entity.HasIndex(s => new { s.BusId, s.RouteId, s.DepartureTime, s.TravelDate })
                     .IsUnique()
                     .HasFilter("[IsDeleted] = 0");
 
@@ -129,6 +129,7 @@ namespace BusTicketingSystem.Data
                 entity.HasIndex(s => s.BusId);
                 entity.HasIndex(s => s.RouteId);
                 entity.HasIndex(s => s.DepartureTime);
+                entity.HasIndex(s => s.TravelDate);
 
                 // 🧹 Soft Delete Query Filter
                 entity.HasQueryFilter(s => !s.IsDeleted);

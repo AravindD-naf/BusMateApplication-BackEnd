@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace BusTicketingSystem.Migrations
 {
     /// <inheritdoc />
-    public partial class init : Migration
+    public partial class Recreatedscheduletable : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -121,8 +121,8 @@ namespace BusTicketingSystem.Migrations
                     RouteId = table.Column<int>(type: "int", nullable: false),
                     BusId = table.Column<int>(type: "int", nullable: false),
                     TravelDate = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    DepartureTime = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    ArrivalTime = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    DepartureTime = table.Column<TimeSpan>(type: "time", nullable: false),
+                    ArrivalTime = table.Column<TimeSpan>(type: "time", nullable: false),
                     TotalSeats = table.Column<int>(type: "int", nullable: false),
                     AvailableSeats = table.Column<int>(type: "int", nullable: false),
                     IsActive = table.Column<bool>(type: "bit", nullable: false, defaultValue: true),
@@ -180,9 +180,9 @@ namespace BusTicketingSystem.Migrations
                 column: "BusId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Schedules_BusId_RouteId_DepartureTime",
+                name: "IX_Schedules_BusId_RouteId_DepartureTime_TravelDate",
                 table: "Schedules",
-                columns: new[] { "BusId", "RouteId", "DepartureTime" },
+                columns: new[] { "BusId", "RouteId", "DepartureTime", "TravelDate" },
                 unique: true,
                 filter: "[IsDeleted] = 0");
 
@@ -195,6 +195,11 @@ namespace BusTicketingSystem.Migrations
                 name: "IX_Schedules_RouteId",
                 table: "Schedules",
                 column: "RouteId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Schedules_TravelDate",
+                table: "Schedules",
+                column: "TravelDate");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Users_Email",

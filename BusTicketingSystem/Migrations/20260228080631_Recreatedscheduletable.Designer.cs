@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace BusTicketingSystem.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20260227061715_init")]
-    partial class init
+    [Migration("20260228080631_Recreatedscheduletable")]
+    partial class Recreatedscheduletable
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -195,8 +195,8 @@ namespace BusTicketingSystem.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ScheduleId"));
 
-                    b.Property<DateTime>("ArrivalTime")
-                        .HasColumnType("datetime2");
+                    b.Property<TimeSpan>("ArrivalTime")
+                        .HasColumnType("time");
 
                     b.Property<int>("AvailableSeats")
                         .HasColumnType("int");
@@ -209,8 +209,8 @@ namespace BusTicketingSystem.Migrations
                         .HasColumnType("datetime2")
                         .HasDefaultValueSql("GETUTCDATE()");
 
-                    b.Property<DateTime>("DepartureTime")
-                        .HasColumnType("datetime2");
+                    b.Property<TimeSpan>("DepartureTime")
+                        .HasColumnType("time");
 
                     b.Property<bool>("IsActive")
                         .ValueGeneratedOnAdd()
@@ -242,7 +242,9 @@ namespace BusTicketingSystem.Migrations
 
                     b.HasIndex("RouteId");
 
-                    b.HasIndex("BusId", "RouteId", "DepartureTime")
+                    b.HasIndex("TravelDate");
+
+                    b.HasIndex("BusId", "RouteId", "DepartureTime", "TravelDate")
                         .IsUnique()
                         .HasFilter("[IsDeleted] = 0");
 
