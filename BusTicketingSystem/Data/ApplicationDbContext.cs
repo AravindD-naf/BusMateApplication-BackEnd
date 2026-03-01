@@ -30,6 +30,9 @@ namespace BusTicketingSystem.Data
         public DbSet<Passenger> Passengers { get; set; }
         public DbSet<CancellationPolicy> CancellationPolicies { get; set; }
 
+        // Error Logging
+        public DbSet<ErrorLog> ErrorLogs { get; set; }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);

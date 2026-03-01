@@ -48,16 +48,20 @@ namespace BusTicketingSystem.Services
         {
             var booking = await _bookingRepository.GetByIdAsync(bookingId);
             if (booking == null || booking.IsDeleted)
-                throw new BookingNotFoundException("Booking not found.");
+                throw new ResourceNotFoundException("Booking", bookingId.ToString());
 
             if (booking.UserId != userId)
                 throw new UnauthorizedAccessException("You cannot initiate payment for this booking.");
 
             if (booking.BookingStatus != BookingStatus.Pending)
-                throw new PaymentException("Can only initiate payment for Pending bookings.");
+                throw new PaymentOperationException(
+                    "Can only initiate payment for Pending bookings",
+                    PaymentOperationException.PaymentErrorType.ProcessingError);
 
             if (Math.Abs(amount - booking.TotalAmount) > 0.01m)
-                throw new PaymentException("Payment amount does not match booking total.");
+                throw new PaymentOperationException(
+                    "Payment amount does not match booking total",
+                    PaymentOperationException.PaymentErrorType.InvalidAmount);
 
             // Create payment record
             var payment = new Payment
@@ -98,7 +102,7 @@ namespace BusTicketingSystem.Services
         {
             var payment = await _paymentRepository.GetByIdAsync(paymentId);
             if (payment == null || payment.IsDeleted)
-                throw new PaymentException("Payment not found.");
+                throw new ResourceNotFoundException("Payment", paymentId.ToString());
 
             return ApiResponse<PaymentResponseDto>.SuccessResponse(MapToDto(payment));
         }
@@ -114,17 +118,19 @@ namespace BusTicketingSystem.Services
         {
             var payment = await _paymentRepository.GetByIdAsync(dto.PaymentId);
             if (payment == null || payment.IsDeleted)
-                throw new PaymentException("Payment not found.");
+                throw new ResourceNotFoundException("Payment", dto.PaymentId.ToString());
 
             var booking = await _bookingRepository.GetByIdAsync(payment.BookingId);
             if (booking == null)
-                throw new BookingNotFoundException("Associated booking not found.");
+                throw new ResourceNotFoundException("Booking", payment.BookingId.ToString());
 
             if (booking.UserId != userId)
                 throw new UnauthorizedAccessException("Unauthorized payment confirmation.");
 
             if (payment.Status != PaymentStatus.Pending && payment.Status != PaymentStatus.Processing)
-                throw new PaymentException($"Cannot confirm payment with status: {payment.Status}");
+                throw new PaymentOperationException(
+                    $"Cannot confirm payment with status: {payment.Status}",
+                    PaymentOperationException.PaymentErrorType.ProcessingError);
 
             // DUMMY PAYMENT PROCESSING
             // In real system, gateway would validate TransactionId and amount
@@ -172,14 +178,16 @@ namespace BusTicketingSystem.Services
         {
             var booking = await _bookingRepository.GetByIdAsync(bookingId);
             if (booking == null || booking.IsDeleted)
-                throw new BookingNotFoundException("Booking not found.");
+                throw new ResourceNotFoundException("Booking", bookingId.ToString());
 
             if (booking.UserId != userId)
                 throw new UnauthorizedAccessException("You cannot initiate refund for this booking.");
 
             var payment = await _paymentRepository.GetByBookingIdAsync(bookingId);
             if (payment == null || payment.Status != PaymentStatus.Success)
-                throw new RefundException("Can only refund for confirmed payments.");
+                throw new RefundOperationException(
+                    "Can only refund for confirmed payments",
+                    RefundOperationException.RefundErrorType.InvalidRefund);
 
             // Calculate refund amount
             var (refundAmount, refundPercentage, cancellationFee) = await CalculateRefundAsync(bookingId);
@@ -219,7 +227,7 @@ namespace BusTicketingSystem.Services
         {
             var refund = await _refundRepository.GetByIdAsync(refundId);
             if (refund == null || refund.IsDeleted)
-                throw new RefundException("Refund not found.");
+                throw new ResourceNotFoundException("Refund", refundId.ToString());
 
             return ApiResponse<RefundResponseDto>.SuccessResponse(MapToDto(refund));
         }
@@ -234,10 +242,12 @@ namespace BusTicketingSystem.Services
         {
             var refund = await _refundRepository.GetByIdAsync(dto.RefundId);
             if (refund == null || refund.IsDeleted)
-                throw new RefundException("Refund not found.");
+                throw new ResourceNotFoundException("Refund", dto.RefundId.ToString());
 
             if (refund.Status != RefundStatus.Pending && refund.Status != RefundStatus.Processing)
-                throw new RefundException($"Cannot confirm refund with status: {refund.Status}");
+                throw new RefundOperationException(
+                    $"Cannot confirm refund with status: {refund.Status}",
+                    RefundOperationException.RefundErrorType.ProcessingError);
 
             // DUMMY REFUND PROCESSING
             refund.ProcessedAt = DateTime.UtcNow;
@@ -300,11 +310,11 @@ namespace BusTicketingSystem.Services
         {
             var booking = await _bookingRepository.GetByIdAsync(bookingId);
             if (booking == null)
-                throw new BookingNotFoundException("Booking not found.");
+                throw new ResourceNotFoundException("Booking", bookingId.ToString());
 
             var schedule = await _scheduleRepository.GetByIdAsync(booking.ScheduleId);
             if (schedule == null)
-                throw new InvalidScheduleException("Schedule not found.");
+                throw new ResourceNotFoundException("Schedule", booking.ScheduleId.ToString());
 
             var departure = schedule.TravelDate.Add(schedule.DepartureTime);
             var hoursToDeparture = (int)(departure - DateTime.UtcNow).TotalHours;

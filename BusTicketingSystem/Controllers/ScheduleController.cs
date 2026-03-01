@@ -56,7 +56,6 @@ namespace BusTicketingSystem.Controllers
 {
     [ApiController]
     [Route("api/v1/[controller]")]
-    [Authorize(Roles = "Admin")]
     public class ScheduleController : ControllerBase
     {
         private readonly IScheduleService _scheduleService;
@@ -66,7 +65,8 @@ namespace BusTicketingSystem.Controllers
             _scheduleService = scheduleService;
         }
 
-        // ✅ 1. CREATE
+        // ✅ 1. CREATE (Admin Only)
+        [Authorize(Roles = "Admin")]
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] ScheduleRequestDto dto)
         {
@@ -78,7 +78,8 @@ namespace BusTicketingSystem.Controllers
             return Ok(response);
         }
 
-        // ✅ 2. GET ALL (Paginated)
+        // ✅ 2. GET ALL (Public - Paginated)
+        [AllowAnonymous]
         [HttpGet]
         public async Task<IActionResult> GetAll(
             [FromQuery] int pageNumber = 1,
@@ -90,7 +91,8 @@ namespace BusTicketingSystem.Controllers
             return Ok(response);
         }
 
-        // ✅ 3. GET BY ID
+        // ✅ 3. GET BY ID (Public)
+        [AllowAnonymous]
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById(int id)
         {
@@ -98,7 +100,8 @@ namespace BusTicketingSystem.Controllers
             return Ok(response);
         }
 
-        // ✅ 4. UPDATE
+        // ✅ 4. UPDATE (Admin Only)
+        [Authorize(Roles = "Admin")]
         [HttpPut("{id}")]
         public async Task<IActionResult> Update(
             int id,
@@ -113,7 +116,8 @@ namespace BusTicketingSystem.Controllers
             return Ok(response);
         }
 
-        // ✅ 5. DELETE (Soft Delete)
+        // ✅ 5. DELETE (Admin Only)
+        [Authorize(Roles = "Admin")]
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id)
         {
@@ -126,6 +130,7 @@ namespace BusTicketingSystem.Controllers
         }
 
 
+        [AllowAnonymous]
         [HttpGet("from/{fromCity}")]
         public async Task<IActionResult> GetByFromCity(string fromCity)
         {
@@ -133,6 +138,7 @@ namespace BusTicketingSystem.Controllers
             return Ok(response);
         }
 
+        [AllowAnonymous]
         [HttpGet("to/{toCity}")]
         public async Task<IActionResult> GetByToCity(string toCity)
         {
@@ -140,6 +146,7 @@ namespace BusTicketingSystem.Controllers
             return Ok(response);
         }
 
+        [AllowAnonymous]
         [HttpGet("search")] 
         public async Task<IActionResult> Search(
             [FromQuery] string fromCity,

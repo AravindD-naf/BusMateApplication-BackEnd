@@ -10,7 +10,6 @@ namespace BusTicketingSystem.Controllers
 {
     [ApiController]
     [Route("api/v1/buses")]
-    [Authorize(Roles = "Admin")]
     public class BusesController : ControllerBase
     {
         private readonly IBusService _busService;
@@ -20,6 +19,8 @@ namespace BusTicketingSystem.Controllers
             _busService = busService;
         }
 
+        // Admin Only - Create Bus
+        [Authorize(Roles = "Admin")]
         [HttpPost]
         public async Task<IActionResult> CreateBus(CreateBusRequest request)
         {
@@ -40,6 +41,8 @@ namespace BusTicketingSystem.Controllers
             return Ok(ApiResponse<BusResponse>.SuccessResponse("Bus created successfully", result));
         }
 
+        // Public - Get All Buses
+        [AllowAnonymous]
         [HttpGet]
         public async Task<IActionResult> GetAllBuses(int pageNumber = 1, int pageSize = 10)
         {
@@ -47,6 +50,8 @@ namespace BusTicketingSystem.Controllers
             return Ok(ApiResponse<List<BusResponse>>.SuccessResponse(result));
         }
 
+        // Public - Get Single Bus
+        [AllowAnonymous]
         [HttpGet("{id}")]
         public async Task<IActionResult> GetBus(int id)
         {
@@ -54,18 +59,10 @@ namespace BusTicketingSystem.Controllers
             return Ok(ApiResponse<BusResponse>.SuccessResponse(result));
         }
 
+        // Admin Only - Update Bus
+        [Authorize(Roles = "Admin")]
         [HttpPut("{id}")]
-        
-            ////await _busService.UpdateBusAsync(id, request);
-            ////return Ok(ApiResponse<BusResponse>.SuccessMessage("Bus updated successfully"));
-            //var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
-            //var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
-
-            //await _busService.UpdateBusAsync(id, request, userId, ipAddress);
-
-            //return Ok(ApiResponse<string>.SuccessResponse("Bus updated successfully."));
-
-            public async Task<IActionResult> UpdateBus(int id, [FromBody] UpdateBusRequest request)
+        public async Task<IActionResult> UpdateBus(int id, [FromBody] UpdateBusRequest request)
         {
             // 1️⃣ Basic request validation
             if (request == null)
@@ -91,6 +88,8 @@ namespace BusTicketingSystem.Controllers
         }
         
 
+        // Admin Only - Delete Bus
+        [Authorize(Roles = "Admin")]
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteBus(int id)
         {
@@ -99,8 +98,9 @@ namespace BusTicketingSystem.Controllers
         }
 
 
+        // Public - Get Buses by Operator
+        [AllowAnonymous]
         [HttpGet("by-operator")]
-        [Authorize]
         public async Task<IActionResult> GetByOperator(
             string operatorName,
             int pageNumber = 1,

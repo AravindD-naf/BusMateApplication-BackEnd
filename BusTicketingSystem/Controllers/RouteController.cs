@@ -12,7 +12,6 @@ namespace BusTicketingSystem.Controllers
     [ApiController]
     [ApiVersion("1.0")]
     [Route("api/v{version:apiVersion}/routes")]
-    [Authorize]
     public class RouteController : ControllerBase
     {
         private readonly IRouteService _routeService;
@@ -22,7 +21,8 @@ namespace BusTicketingSystem.Controllers
             _routeService = routeService;
         }
 
-        // 🔹 GET: All Routes (Admin + Customer allowed)
+        // 🔹 GET: All Routes (Public)
+        [AllowAnonymous]
         [HttpGet]
         public async Task<IActionResult> GetAll(int pageNumber = 1, int pageSize = 10)
         {
@@ -30,7 +30,8 @@ namespace BusTicketingSystem.Controllers
             return Ok(response);
         }
 
-        // 🔹 GET: Route By Id
+        // 🔹 GET: Route By Id (Public)
+        [AllowAnonymous]
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById(int id)
         {
@@ -39,8 +40,8 @@ namespace BusTicketingSystem.Controllers
         }
 
         // 🔒 POST: Create Route (Admin Only)
-        [HttpPost]
         [Authorize(Roles = "Admin")]
+        [HttpPost]
         public async Task<IActionResult> Create(RouteCreateRequestDto request)
         {
             var userId = GetUserId();
@@ -80,7 +81,8 @@ namespace BusTicketingSystem.Controllers
             return Ok(response);
         }
 
-        // 🔹 GET: Routes by Source
+        // 🔹 GET: Routes by Source (Public)
+        [AllowAnonymous]
         [HttpGet("by-source")]
         public async Task<IActionResult> GetBySource(
             [FromQuery] string source,
@@ -93,7 +95,8 @@ namespace BusTicketingSystem.Controllers
             return Ok(response);
         }
 
-        // 🔹 GET: Routes by Destination
+        // 🔹 GET: Routes by Destination (Public)
+        [AllowAnonymous]
         [HttpGet("by-destination")]
         public async Task<IActionResult> GetByDestination(
             [FromQuery] string destination,
@@ -106,7 +109,8 @@ namespace BusTicketingSystem.Controllers
             return Ok(response);
         }
 
-        // 🔍 Dynamic Route Search
+        // 🔍 Dynamic Route Search (Public)
+        [AllowAnonymous]
         [HttpGet("search")]
         public async Task<IActionResult> Search(
             [FromQuery] string? source,

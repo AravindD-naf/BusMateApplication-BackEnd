@@ -40,14 +40,15 @@ namespace BusTicketingSystem.Services
         {
             var booking = await _bookingRepository.GetByIdAsync(dto.BookingId);
             if (booking == null || booking.IsDeleted)
-                throw new BookingNotFoundException("Booking not found.");
+                throw new ResourceNotFoundException("Booking", dto.BookingId.ToString());
 
             if (booking.UserId != userId)
-                throw new UnauthorizedAccessException("You can only add passengers to your own booking.");
+                throw new UnauthorizedAccessException("You can only add passengers to your own booking");
 
             if (dto.Passengers.Count != booking.NumberOfSeats)
-                throw new InvalidPassengerException(
-                    $"Number of passengers ({dto.Passengers.Count}) must match number of seats ({booking.NumberOfSeats})");
+                throw new ValidationException(
+                    $"Number of passengers must match number of seats")
+                    .AddError("passengers", $"Expected {booking.NumberOfSeats} passengers, got {dto.Passengers.Count}");
 
             var passengers = new List<Passenger>();
 

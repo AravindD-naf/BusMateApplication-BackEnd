@@ -1,10 +1,12 @@
 ﻿using BusTicketingSystem.Common.Responses;
 using BusTicketingSystem.DTOs.Requests;
 using BusTicketingSystem.DTOs.Responses;
+using BusTicketingSystem.Exceptions;
 using BusTicketingSystem.Helpers;
 using BusTicketingSystem.Interfaces.Repositories;
 using BusTicketingSystem.Interfaces.Services;
 using BusTicketingSystem.Models;
+using System.Text.Encodings.Web;
 using System.Text.Json;
 namespace BusTicketingSystem.Services
 {
@@ -12,12 +14,18 @@ namespace BusTicketingSystem.Services
     {
         private readonly IRouteRepository _routeRepository;
         private readonly IAuditRepository _auditRepository;
+        private readonly JsonSerializerOptions _jsonOptions;
 
         public RouteService(IRouteRepository routeRepository,
                             IAuditRepository auditRepository)
         {
             _routeRepository = routeRepository;
             _auditRepository = auditRepository;
+            _jsonOptions = new JsonSerializerOptions
+            {
+                Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
+                WriteIndented = false
+            };
         }
 
         public async Task<ApiResponse<RouteResponseDto>> CreateRouteAsync(RouteCreateRequestDto request, int userId, string ipAddress)
@@ -26,12 +34,15 @@ namespace BusTicketingSystem.Services
                 .GetBySourceDestinationAsync(request.Source.Trim(), request.Destination.Trim());
 
             if (existing != null && !existing.IsDeleted)
-                throw new Exception("Route already exists.");
+                throw new ConflictException($"Route from {request.Source} to {request.Destination} already exists");
 
             var route = new Models.Route
             {
                 Source = request.Source.Trim(),
                 Destination = request.Destination.Trim(),
+                Distance = request.Distance,
+                EstimatedTravelTimeMinutes = request.EstimatedTravelTimeMinutes,
+                BaseFare = request.BaseFare,
                 IsActive = true,
                 CreatedAt = DateTime.UtcNow
             };
@@ -47,13 +58,23 @@ namespace BusTicketingSystem.Services
         public async Task<ApiResponse<RouteResponseDto>> UpdateRouteAsync(int id, RouteUpdateRequestDto request, int userId, string ipAddress)
         {
             var route = await _routeRepository.GetByIdAsync(id)
-                ?? throw new Exception("Route not found.");
+                ?? throw new ResourceNotFoundException("Route", id.ToString());
 
             var oldValues = JsonSerializer.Serialize(route);
 
             route.Source = request.Source.Trim();
             route.Destination = request.Destination.Trim();
-            route.IsActive = request.IsActive;
+            route.Distance = request.Distance;
+            route.EstimatedTravelTimeMinutes = request.EstimatedTravelTimeMinutes;
+            route.BaseFare = request.BaseFare;
+            
+            // ✅ FIX: Only update IsActive if explicitly provided (not null)
+            // This preserves the existing value if not specified in the request
+            if (request.IsActive.HasValue)
+            {
+                route.IsActive = request.IsActive.Value;
+            }
+            
             route.UpdatedAt = DateTime.UtcNow;
 
             _routeRepository.Update(route);
@@ -115,8 +136,12 @@ namespace BusTicketingSystem.Services
                 RouteId = route.RouteId,
                 Source = route.Source,
                 Destination = route.Destination,
+                Distance = route.Distance,
+                EstimatedTravelTimeMinutes = route.EstimatedTravelTimeMinutes,
+                BaseFare = route.BaseFare,
                 IsActive = route.IsActive,
-                CreatedAt = route.CreatedAt
+                CreatedAt = route.CreatedAt,
+                UpdatedAt = route.UpdatedAt
             };
         }
 
@@ -128,8 +153,8 @@ namespace BusTicketingSystem.Services
                 Action = action,
                 EntityName = "Route",
                 EntityId = route.RouteId.ToString(),
-                OldValues = oldValues != null ? JsonSerializer.Serialize(oldValues) : null,
-                NewValues = newValues != null ? JsonSerializer.Serialize(newValues) : null,
+                OldValues = oldValues != null ? JsonSerializer.Serialize(oldValues, _jsonOptions) : null,
+                NewValues = newValues != null ? JsonSerializer.Serialize(newValues, _jsonOptions) : null,
                 IpAddress = ipAddress,
                 Timestamp = DateTime.UtcNow
             };

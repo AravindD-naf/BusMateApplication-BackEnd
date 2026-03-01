@@ -2,6 +2,7 @@
 using BusTicketingSystem.Interfaces.Repositories;
 using BusTicketingSystem.Interfaces.Services;
 using BusTicketingSystem.Models;
+using System.Text.Encodings.Web;
 using System.Text.Json;
 
 namespace BusTicketingSystem.Services
@@ -9,10 +10,16 @@ namespace BusTicketingSystem.Services
     public class AuditService : IAuditService
     {
         private readonly IAuditRepository _auditRepository;
+        private readonly JsonSerializerOptions _jsonOptions;
 
         public AuditService(IAuditRepository auditRepository)
         {
             _auditRepository = auditRepository;
+            _jsonOptions = new JsonSerializerOptions
+            {
+                Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
+                WriteIndented = false
+            };
         }
 
         public async Task LogAsync(
@@ -31,10 +38,10 @@ namespace BusTicketingSystem.Services
                 EntityName = entityName,
                 EntityId = entityId,
                 OldValues = oldValues != null
-                    ? JsonSerializer.Serialize(oldValues)
+                    ? JsonSerializer.Serialize(oldValues, _jsonOptions)
                     : null,
                 NewValues = newValues != null
-                    ? JsonSerializer.Serialize(newValues)
+                    ? JsonSerializer.Serialize(newValues, _jsonOptions)
                     : null,
                 IpAddress = ipAddress,
                 Timestamp = DateTime.UtcNow

@@ -33,7 +33,7 @@ namespace BusTicketingSystem.Services
 
             var existing = await _busRepository.GetByBusNumberAsync(normalizedBusNumber);
             if (existing != null && !existing.IsDeleted)
-                throw new BadRequestException("Bus number already exists.");
+                throw new ConflictException($"Bus number {normalizedBusNumber} already exists");
 
             var bus = new Bus
             {

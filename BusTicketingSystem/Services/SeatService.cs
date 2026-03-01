@@ -1,4 +1,5 @@
 using BusTicketingSystem.DTOs.Responses;
+using BusTicketingSystem.Exceptions;
 using BusTicketingSystem.Interfaces.Repositories;
 using BusTicketingSystem.Interfaces.Services;
 using BusTicketingSystem.Models;
@@ -30,7 +31,7 @@ namespace BusTicketingSystem.Services
         {
             var schedule = await _scheduleRepository.GetByIdAsync(scheduleId);
             if (schedule == null || schedule.IsDeleted || !schedule.IsActive)
-                throw new Exception("Invalid schedule.");
+                throw new ResourceNotFoundException("Schedule", scheduleId.ToString());
 
             var seats = await _seatRepository.GetSeatsByScheduleIdAsync(scheduleId);
 

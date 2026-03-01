@@ -39,6 +39,9 @@ builder.Services.AddScoped<ICancellationPolicyRepository, CancellationPolicyRepo
 builder.Services.AddScoped<IPaymentService, PaymentService>();
 builder.Services.AddScoped<IPassengerService, PassengerService>();
 
+// Error Logging Service
+builder.Services.AddScoped<IErrorLogService, ErrorLogService>();
+
 // DATABASE
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));

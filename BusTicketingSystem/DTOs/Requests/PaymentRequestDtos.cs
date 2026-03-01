@@ -1,6 +1,15 @@
 namespace BusTicketingSystem.DTOs.Requests
 {
     /// <summary>
+    /// Request DTO for initiating payment
+    /// </summary>
+    public class InitiatePaymentRequestDto
+    {
+        public int BookingId { get; set; }
+        public decimal Amount { get; set; }
+    }
+
+    /// <summary>
     /// Request DTO for processing payment
     /// </summary>
     public class ProcessPaymentRequestDto

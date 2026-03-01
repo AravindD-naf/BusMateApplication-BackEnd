@@ -1,8 +1,10 @@
 ﻿using BusTicketingSystem.Common.Responses;
 using BusTicketingSystem.DTOs;
+using BusTicketingSystem.Exceptions;
 using BusTicketingSystem.Interfaces.Repositories;
 using BusTicketingSystem.Interfaces.Services;
 using BusTicketingSystem.Models;
+using System.Text.Encodings.Web;
 using System.Text.Json;
 
 namespace BusTicketingSystem.Services
@@ -13,6 +15,7 @@ namespace BusTicketingSystem.Services
         private readonly IRouteRepository _routeRepository;
         private readonly IBusRepository _busRepository;
         private readonly IAuditRepository _auditRepository;
+        private readonly JsonSerializerOptions _jsonOptions;
 
         public ScheduleService(
             IScheduleRepository scheduleRepository,
@@ -24,6 +27,11 @@ namespace BusTicketingSystem.Services
             _routeRepository = routeRepository;
             _busRepository = busRepository;
             _auditRepository = auditRepository;
+            _jsonOptions = new JsonSerializerOptions
+            {
+                Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
+                WriteIndented = false
+            };
         }
 
         // ✅ CREATE
@@ -34,24 +42,24 @@ namespace BusTicketingSystem.Services
         {
             // Validation
             if (dto.ArrivalTime <= dto.DepartureTime)
-                throw new Exception("Arrival time must be after departure time.");
+                throw ValidationException.ForField("arrivalTime", "Arrival time must be after departure time");
 
             if (dto.TravelDate.Date < DateTime.UtcNow.Date)
-                throw new Exception("Travel date cannot be in the past.");
+                throw ValidationException.ForField("travelDate", "Travel date cannot be in the past");
 
             var route = await _routeRepository.GetByIdAsync(dto.RouteId);
             if (route == null || route.IsDeleted || !route.IsActive)
-                throw new Exception("Invalid Route.");
+                throw new ResourceNotFoundException("Route", dto.RouteId.ToString());
 
             var bus = await _busRepository.GetByIdAsync(dto.BusId);
             if (bus == null || bus.IsDeleted || !bus.IsActive)
-                throw new Exception("Invalid Bus.");
+                throw new ResourceNotFoundException("Bus", dto.BusId.ToString());
 
             var exists = await _scheduleRepository
                 .ExistsAsync(dto.BusId, dto.TravelDate, dto.DepartureTime);
 
             if (exists)
-                throw new Exception("Duplicate schedule exists.");
+                throw new ConflictException("A schedule already exists for this bus, date, and time");
 
             var schedule = new Schedule
             {

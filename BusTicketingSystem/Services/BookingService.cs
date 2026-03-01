@@ -1,5 +1,6 @@
 ﻿using BusTicketingSystem.DTOs.Requests;
 using BusTicketingSystem.DTOs.Responses;
+using BusTicketingSystem.Exceptions;
 using BusTicketingSystem.Interfaces.Repositories;
 using BusTicketingSystem.Interfaces.Services;
 using BusTicketingSystem.Models;
@@ -43,22 +44,26 @@ namespace BusTicketingSystem.Services
             string ipAddress)
         {
             if (dto.SeatNumbers == null || dto.SeatNumbers.Count == 0)
-                throw new Exception("At least one seat must be selected.");
+                throw ValidationException.ForField("seatNumbers", "At least one seat must be selected");
 
             var schedule = await _scheduleRepository.GetByIdAsync(dto.ScheduleId);
 
             if (schedule == null || schedule.IsDeleted || !schedule.IsActive)
-                throw new Exception("Invalid schedule.");
+                throw new ResourceNotFoundException("Schedule", dto.ScheduleId.ToString());
 
             // Travel date check
             DateTime departureDateTime =
                 schedule.TravelDate.Add(schedule.DepartureTime);
 
             if (departureDateTime <= DateTime.UtcNow)
-                throw new Exception("Cannot book after departure time.");
+                throw new BookingOperationException(
+                    "Cannot book after departure time",
+                    BookingOperationException.BookingErrorType.BookingExpired);
 
             if (dto.SeatNumbers.Count > schedule.AvailableSeats)
-                throw new Exception("Not enough seats available.");
+                throw new BookingOperationException(
+                    $"Not enough seats available. Only {schedule.AvailableSeats} seats remaining",
+                    BookingOperationException.BookingErrorType.InsufficientSeats);
 
             // Start transaction for atomic booking
             using (var transaction = await _scheduleRepository.BeginTransactionAsync())
@@ -73,13 +78,19 @@ namespace BusTicketingSystem.Services
                         var seat = seats.FirstOrDefault(s => s.SeatNumber == seatNumber);
 
                         if (seat == null)
-                            throw new Exception($"Seat {seatNumber} not found.");
+                            throw new SeatOperationException(
+                                $"Seat {seatNumber} not found",
+                                SeatOperationException.SeatErrorType.InvalidSeatNumber);
 
                         if (seat.SeatStatus != "Locked")
-                            throw new Exception($"Seat {seatNumber} is not locked. Please lock seats before booking.");
+                            throw new SeatOperationException(
+                                $"Seat {seatNumber} is not locked. Please lock seats before booking",
+                                SeatOperationException.SeatErrorType.SeatNotLocked);
 
                         if (seat.LockedByUserId != userId)
-                            throw new Exception($"Seat {seatNumber} is not locked by you.");
+                            throw new SeatOperationException(
+                                $"Seat {seatNumber} is locked by another user",
+                                SeatOperationException.SeatErrorType.SeatNotAvailable);
                     }
 
                     // Create booking record
@@ -160,15 +171,17 @@ namespace BusTicketingSystem.Services
             var booking = await _bookingRepository.GetByIdAsync(bookingId);
 
             if (booking == null || booking.IsDeleted)
-                throw new Exception("Booking not found.");
+                throw new ResourceNotFoundException("Booking", bookingId.ToString());
 
             var schedule = await _scheduleRepository.GetByIdAsync(booking.ScheduleId);
 
             if (schedule == null)
-                throw new Exception("Schedule not found.");
+                throw new ResourceNotFoundException("Schedule", booking.ScheduleId.ToString());
 
             if (schedule.Route == null || schedule.Bus == null)
-                throw new Exception("Schedule details are incomplete.");
+                throw new BookingOperationException(
+                    "Schedule details are incomplete",
+                    BookingOperationException.BookingErrorType.InvalidSchedule);
 
             var bookingDetail = new BookingDetailResponseDto
             {
