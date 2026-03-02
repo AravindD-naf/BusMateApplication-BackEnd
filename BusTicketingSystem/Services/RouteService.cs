@@ -67,9 +67,7 @@ namespace BusTicketingSystem.Services
             route.Distance = request.Distance;
             route.EstimatedTravelTimeMinutes = request.EstimatedTravelTimeMinutes;
             route.BaseFare = request.BaseFare;
-            
-            // ✅ FIX: Only update IsActive if explicitly provided (not null)
-            // This preserves the existing value if not specified in the request
+        
             if (request.IsActive.HasValue)
             {
                 route.IsActive = request.IsActive.Value;

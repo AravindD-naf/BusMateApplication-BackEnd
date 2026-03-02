@@ -6,10 +6,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace BusTicketingSystem.Middleware
 {
-    /// <summary>
-    /// Global exception handler middleware
-    /// Catches all unhandled exceptions and returns structured error responses
-    /// </summary>
+   
     public class ExceptionMiddleware
     {
         private readonly RequestDelegate _next;
@@ -33,9 +30,7 @@ namespace BusTicketingSystem.Middleware
             }
         }
 
-        /// <summary>
-        /// Handle exception and return appropriate response
-        /// </summary>
+      
         private async Task HandleExceptionAsync(HttpContext context, Exception exception, IErrorLogService errorLogService)
         {
             context.Response.ContentType = "application/json";
@@ -49,7 +44,6 @@ namespace BusTicketingSystem.Middleware
 
             try
             {
-                // Get user ID if available
                 int? userId = null;
                 if (context.User?.FindFirst("UserId")?.Value != null)
                 {
@@ -57,7 +51,6 @@ namespace BusTicketingSystem.Middleware
                     userId = uid;
                 }
 
-                // Handle ApplicationException
                 if (exception is Exceptions.ApplicationException appEx)
                 {
                     statusCode = appEx.StatusCode;
@@ -66,7 +59,6 @@ namespace BusTicketingSystem.Middleware
                     internalMessage = appEx.InternalMessage;
                     errors = appEx.Errors;
                 }
-                // Handle legacy exceptions
                 else if (exception is Exceptions.NotFoundException)
                 {
                     statusCode = StatusCodes.Status404NotFound;
@@ -106,7 +98,6 @@ namespace BusTicketingSystem.Middleware
                     userMessage = "The request was cancelled. Please try again.";
                 }
 
-                // Log to database
                 await errorLogService.LogErrorAsync(exception, context, userId);
             }
             catch (Exception logEx)
@@ -114,7 +105,6 @@ namespace BusTicketingSystem.Middleware
                 _logger.LogError(logEx, "Failed to log exception to database");
             }
 
-            // Create structured error response
             context.Response.StatusCode = statusCode;
 
             var response = new
@@ -128,7 +118,6 @@ namespace BusTicketingSystem.Middleware
                 traceId = traceId
             };
 
-            // Log to application logger
             if (statusCode >= 500)
             {
                 _logger.LogError(

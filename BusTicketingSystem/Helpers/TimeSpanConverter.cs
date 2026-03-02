@@ -1,12 +1,4 @@
-﻿//namespace BusTicketingSystem.Helpers
-//{
-//    public class TimeSpanConverter
-//    {
-//    }
-//}
-
-
-using System;
+﻿using System;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 

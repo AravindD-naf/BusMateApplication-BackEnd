@@ -4,7 +4,6 @@
     public string Message { get; set; } = string.Empty;
     public T? Data { get; set; }
 
-    // ✔ When returning only data
     public static ApiResponse<T> SuccessResponse(T data)
     {
         return new ApiResponse<T>
@@ -15,7 +14,6 @@
         };
     }
 
-    // ✔ When returning only message
     public static ApiResponse<T> SuccessResponse(string message)
     {
         return new ApiResponse<T>
@@ -26,7 +24,6 @@
         };
     }
 
-    // ✔ When returning both
     public static ApiResponse<T> SuccessResponse(string message, T data)
     {
         return new ApiResponse<T>

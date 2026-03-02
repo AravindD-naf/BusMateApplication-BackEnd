@@ -33,10 +33,6 @@ namespace BusTicketingSystem.Controllers
 
         #region Schedule Browsing Endpoints
 
-        /// <summary>
-        /// GET /api/v1/booking/schedules
-        /// Get all available schedules for browsing (Public)
-        /// </summary>
         [AllowAnonymous]
         [HttpGet("schedules")]
         public async Task<IActionResult> GetSchedules(int pageNumber = 1, int pageSize = 10)
@@ -57,10 +53,6 @@ namespace BusTicketingSystem.Controllers
             }
         }
 
-        /// <summary>
-        /// GET /api/v1/booking/schedules/search
-        /// Search schedules by route and date (Public)
-        /// </summary>
         [AllowAnonymous]
         [HttpGet("schedules/search")]
         public async Task<IActionResult> SearchSchedules(
@@ -89,10 +81,6 @@ namespace BusTicketingSystem.Controllers
 
         #region Seat Management Endpoints
 
-        /// <summary>
-        /// GET /api/v1/booking/seats/{scheduleId}
-        /// Get complete seat layout for a schedule
-        /// </summary>
         [Authorize]
         [HttpGet("seats/{scheduleId}")]
         public async Task<IActionResult> GetSeatLayout(int scheduleId)
@@ -113,10 +101,8 @@ namespace BusTicketingSystem.Controllers
             }
         }
 
-        /// <summary>
-        /// POST /api/v1/booking/seats/lock
+
         /// Lock selected seats for 5 minutes
-        /// </summary>
         [Authorize(Roles = "Customer")]
         [HttpPost("seats/lock")]
         public async Task<IActionResult> LockSeats([FromBody] LockSeatsRequestDto dto)
@@ -156,10 +142,7 @@ namespace BusTicketingSystem.Controllers
             }
         }
 
-        /// <summary>
-        /// POST /api/v1/booking/seats/release
-        /// Release locked seats
-        /// </summary>
+
         [Authorize(Roles = "Customer")]
         [HttpPost("seats/release")]
         public async Task<IActionResult> ReleaseSeats([FromBody] ReleaseSeatsRequestDto dto)
@@ -203,10 +186,6 @@ namespace BusTicketingSystem.Controllers
 
         #region Booking Endpoints
 
-        /// <summary>
-        /// POST /api/v1/booking
-        /// Create booking with previously locked seats
-        /// </summary>
         [Authorize(Roles = "Customer")]
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] CreateBookingRequestDto dto)
@@ -242,10 +221,7 @@ namespace BusTicketingSystem.Controllers
             }
         }
 
-        /// <summary>
-        /// GET /api/v1/booking/my
-        /// Get current user's bookings
-        /// </summary>
+
         [Authorize(Roles = "Customer")]
         [HttpGet("my")]
         public async Task<IActionResult> MyBookings()
@@ -280,10 +256,6 @@ namespace BusTicketingSystem.Controllers
             }
         }
 
-        /// <summary>
-        /// GET /api/v1/booking
-        /// Get all bookings (Admin only)
-        /// </summary>
         [Authorize(Roles = "Admin")]
         [HttpGet]
         public async Task<IActionResult> AllBookings()
@@ -304,10 +276,6 @@ namespace BusTicketingSystem.Controllers
             }
         }
 
-        /// <summary>
-        /// GET /api/v1/booking/{id}
-        /// Get booking details by ID
-        /// </summary>
         [Authorize(Roles = "Admin,Customer")]
         [HttpGet("{id}")]
         public async Task<IActionResult> GetBookingById(int id)
@@ -328,10 +296,6 @@ namespace BusTicketingSystem.Controllers
             }
         }
 
-        /// <summary>
-        /// PUT /api/v1/booking/cancel/{id}
-        /// Cancel booking and release seats
-        /// </summary>
         [Authorize(Roles = "Admin,Customer")]
         [HttpPut("cancel/{id}")]
         public async Task<IActionResult> Cancel(int id)
@@ -373,10 +337,6 @@ namespace BusTicketingSystem.Controllers
 
         #region Payment Endpoints
 
-        /// <summary>
-        /// POST /api/v1/booking/payment/initiate
-        /// Initiate payment for a booking
-        /// </summary>
         [Authorize(Roles = "Customer")]
         [HttpPost("payment/initiate")]
         public async Task<IActionResult> InitiatePayment([FromBody] InitiatePaymentRequestDto dto)
@@ -400,6 +360,7 @@ namespace BusTicketingSystem.Controllers
                 var result = await _paymentService.InitiatePaymentAsync(
                     dto.BookingId,
                     dto.Amount,
+                    dto.PaymentMethod,
                     userId,
                     ip);
 
@@ -416,10 +377,6 @@ namespace BusTicketingSystem.Controllers
             }
         }
 
-        /// <summary>
-        /// POST /api/v1/booking/payment/confirm
-        /// Confirm payment (dummy payment processing)
-        /// </summary>
         [Authorize(Roles = "Customer")]
         [HttpPost("payment/confirm")]
         public async Task<IActionResult> ConfirmPayment([FromBody] ConfirmPaymentRequestDto dto)
@@ -455,10 +412,6 @@ namespace BusTicketingSystem.Controllers
             }
         }
 
-        /// <summary>
-        /// GET /api/v1/booking/payment/{paymentId}
-        /// Get payment details
-        /// </summary>
         [Authorize(Roles = "Customer,Admin")]
         [HttpGet("payment/{paymentId}")]
         public async Task<IActionResult> GetPayment(int paymentId)
@@ -483,10 +436,6 @@ namespace BusTicketingSystem.Controllers
 
         #region Passenger Endpoints
 
-        /// <summary>
-        /// POST /api/v1/booking/passengers
-        /// Add passenger details to booking
-        /// </summary>
         [Authorize(Roles = "Customer")]
         [HttpPost("passengers")]
         public async Task<IActionResult> AddPassengers([FromBody] AddPassengerRequestDto dto)
@@ -522,10 +471,7 @@ namespace BusTicketingSystem.Controllers
             }
         }
 
-        /// <summary>
-        /// GET /api/v1/booking/{bookingId}/passengers
-        /// Get all passengers for a booking
-        /// </summary>
+
         [Authorize(Roles = "Customer,Admin")]
         [HttpGet("{bookingId}/passengers")]
         public async Task<IActionResult> GetPassengers(int bookingId)
@@ -550,10 +496,6 @@ namespace BusTicketingSystem.Controllers
 
         #region Refund Endpoints
 
-        /// <summary>
-        /// POST /api/v1/booking/refund/confirm
-        /// Confirm refund (Admin only)
-        /// </summary>
         [Authorize(Roles = "Admin")]
         [HttpPost("refund/confirm")]
         public async Task<IActionResult> ConfirmRefund([FromBody] ConfirmRefundRequestDto dto)
@@ -589,10 +531,7 @@ namespace BusTicketingSystem.Controllers
             }
         }
 
-        /// <summary>
-        /// GET /api/v1/booking/refund/{refundId}
-        /// Get refund details
-        /// </summary>
+
         [Authorize(Roles = "Customer,Admin")]
         [HttpGet("refund/{refundId}")]
         public async Task<IActionResult> GetRefund(int refundId)

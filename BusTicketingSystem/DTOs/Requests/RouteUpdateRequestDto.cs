@@ -24,10 +24,6 @@ namespace BusTicketingSystem.DTOs.Requests
         [Range(0, 100000, ErrorMessage = "Base fare must be between 0 and 100000")]
         public decimal BaseFare { get; set; } // base price per seat
 
-        /// <summary>
-        /// Optional: If not provided, existing IsActive status will be preserved
-        /// Use null to maintain current status, true to activate, false to deactivate
-        /// </summary>
         public bool? IsActive { get; set; }
     }
 }

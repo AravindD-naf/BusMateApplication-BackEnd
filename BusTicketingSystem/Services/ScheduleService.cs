@@ -34,13 +34,11 @@ namespace BusTicketingSystem.Services
             };
         }
 
-        // ✅ CREATE
         public async Task<ApiResponse<ScheduleResponseDto>> CreateAsync(
             ScheduleRequestDto dto,
             int userId,
             string ipAddress)
         {
-            // Validation
             if (dto.ArrivalTime <= dto.DepartureTime)
                 throw ValidationException.ForField("arrivalTime", "Arrival time must be after departure time");
 
@@ -89,7 +87,6 @@ namespace BusTicketingSystem.Services
                 .SuccessResponse(MapToDto(schedule));
         }
 
-        // ✅ GET ALL
         public async Task<ApiResponse<PagedResponse<ScheduleResponseDto>>>
             GetAllAsync(int pageNumber, int pageSize)
         {
@@ -110,7 +107,6 @@ namespace BusTicketingSystem.Services
                 .SuccessResponse(paged);
         }
 
-        // ✅ GET BY ID
         public async Task<ApiResponse<ScheduleResponseDto>> GetByIdAsync(int id)
         {
             var schedule = await _scheduleRepository.GetByIdAsync(id);
@@ -121,7 +117,6 @@ namespace BusTicketingSystem.Services
                 .SuccessResponse(MapToDto(schedule));
         }
 
-        // ✅ UPDATE
         public async Task<ApiResponse<ScheduleResponseDto>> UpdateAsync(
     int id,
     ScheduleRequestDto dto,
@@ -135,50 +130,41 @@ namespace BusTicketingSystem.Services
 
             DateTime today = DateTime.UtcNow.Date;
 
-            // 1️⃣ Travel date cannot be past
             if (dto.TravelDate.Date < today)
                 throw new Exception("Travel date cannot be in the past.");
 
-            // 2️⃣ Arrival must be after departure (TimeSpan comparison)
             if (dto.ArrivalTime <= dto.DepartureTime)
                 throw new Exception("Arrival time must be after departure time.");
 
-            // 3️⃣ Build full datetime for proper future validation
             DateTime departureDateTime =
                 dto.TravelDate.Date.Add(dto.DepartureTime);
 
             DateTime arrivalDateTime =
                 dto.TravelDate.Date.Add(dto.ArrivalTime);
 
-            // 4️⃣ If travel date is today → departure must be future
             if (dto.TravelDate.Date == today &&
                 departureDateTime <= DateTime.UtcNow)
                 throw new Exception("Departure time must be in the future.");
 
-            // 5️⃣ Validate Bus
             var bus = await _busRepository.GetByIdAsync(dto.BusId);
             if (bus == null || bus.IsDeleted || !bus.IsActive)
                 throw new Exception("Invalid Bus.");
 
-            // 6️⃣ Validate Route
             var route = await _routeRepository.GetByIdAsync(dto.RouteId);
             if (route == null || route.IsDeleted || !route.IsActive)
                 throw new Exception("Invalid Route.");
 
             var oldValues = System.Text.Json.JsonSerializer.Serialize(schedule);
 
-            // If Bus Changed → Recalculate seats
             bool busChanged = schedule.BusId != dto.BusId;
             if (busChanged)
             {
                 int bookedSeats = schedule.TotalSeats - schedule.AvailableSeats;
 
-                // ❗ Safety Check
                 if (bookedSeats > bus.TotalSeats)
                     throw new Exception(
                         "Cannot change bus. New bus capacity is less than already booked seats.");
 
-                // ✅ Recalculate seats
                 schedule.TotalSeats = bus.TotalSeats;
                 schedule.AvailableSeats = bus.TotalSeats - bookedSeats;
             }
@@ -207,7 +193,6 @@ namespace BusTicketingSystem.Services
         }
 
 
-        // ✅ DELETE (Soft Delete)
         public async Task<ApiResponse<bool>> DeleteAsync(
             int id,
             int userId,
@@ -236,7 +221,6 @@ namespace BusTicketingSystem.Services
             return ApiResponse<bool>.SuccessResponse(true);
         }
 
-        // Search API
 
         public async Task<ApiResponse<List<ScheduleResponseDto>>>
             GetByFromCityAsync(string fromCity)

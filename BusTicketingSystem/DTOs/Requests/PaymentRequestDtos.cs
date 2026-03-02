@@ -1,27 +1,22 @@
 namespace BusTicketingSystem.DTOs.Requests
 {
-    /// <summary>
-    /// Request DTO for initiating payment
-    /// </summary>
+
     public class InitiatePaymentRequestDto
     {
         public int BookingId { get; set; }
         public decimal Amount { get; set; }
+        public string PaymentMethod { get; set; } = string.Empty;
     }
 
-    /// <summary>
-    /// Request DTO for processing payment
-    /// </summary>
-    public class ProcessPaymentRequestDto
-    {
-        public int BookingId { get; set; }
-        public string PaymentMethod { get; set; } = string.Empty; // Card, UPI, Wallet, etc.
-        public decimal Amount { get; set; }
-    }
 
-    /// <summary>
-    /// Request DTO for confirming payment (after user completes payment)
-    /// </summary>
+    //public class ProcessPaymentRequestDto
+    //{
+    //    public int BookingId { get; set; }
+    //    public string PaymentMethod { get; set; } = string.Empty; 
+    //    public decimal Amount { get; set; }
+    //}
+
+
     public class ConfirmPaymentRequestDto
     {
         public int PaymentId { get; set; }
@@ -30,18 +25,14 @@ namespace BusTicketingSystem.DTOs.Requests
         public string FailureReason { get; set; } = string.Empty;
     }
 
-    /// <summary>
-    /// Request DTO for cancelling a booking and requesting refund
-    /// </summary>
+
     public class CancelBookingWithRefundRequestDto
     {
         public int BookingId { get; set; }
         public string CancellationReason { get; set; } = string.Empty;
     }
 
-    /// <summary>
-    /// Request DTO for confirming refund
-    /// </summary>
+
     public class ConfirmRefundRequestDto
     {
         public int RefundId { get; set; }
@@ -49,18 +40,13 @@ namespace BusTicketingSystem.DTOs.Requests
         public string Reason { get; set; } = string.Empty;
     }
 
-    /// <summary>
-    /// Request DTO to add passenger details to booking
-    /// </summary>
+
     public class AddPassengerRequestDto
     {
         public int BookingId { get; set; }
         public List<PassengerDetailDto> Passengers { get; set; } = new();
     }
 
-    /// <summary>
-    /// Passenger details
-    /// </summary>
     public class PassengerDetailDto
     {
         public string SeatNumber { get; set; } = string.Empty;

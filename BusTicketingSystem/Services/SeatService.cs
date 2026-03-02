@@ -71,7 +71,6 @@ namespace BusTicketingSystem.Services
             if (schedule == null || schedule.IsDeleted || !schedule.IsActive)
                 throw new Exception("Invalid schedule.");
 
-            // Check travel date - cannot lock after departure
             DateTime departureDateTime = schedule.TravelDate.Add(schedule.DepartureTime);
             if (departureDateTime <= DateTime.UtcNow)
                 throw new Exception("Cannot lock seats after departure time.");
@@ -85,14 +84,12 @@ namespace BusTicketingSystem.Services
             var now = DateTime.UtcNow;
             var expiresAt = now.AddMinutes(LOCK_EXPIRY_MINUTES);
 
-            // Clean up expired locks first
             await _seatLockRepository.CleanupExpiredLocksAsync();
 
             try
             {
                 var seats = await _seatRepository.GetSeatsByNumbersAsync(scheduleId, seatNumbers);
 
-                // Validate each seat
                 foreach (var seatNumber in seatNumbers)
                 {
                     var seat = seats.FirstOrDefault(s => s.SeatNumber == seatNumber);
@@ -115,7 +112,6 @@ namespace BusTicketingSystem.Services
                         continue;
                     }
 
-                    // If already locked by same user, update expiry
                     if (seat.SeatStatus == "Locked" && seat.LockedByUserId == userId)
                     {
                         seat.LockedAt = now;
@@ -124,13 +120,11 @@ namespace BusTicketingSystem.Services
                         continue;
                     }
 
-                    // Lock the seat
                     seat.SeatStatus = "Locked";
                     seat.LockedByUserId = userId;
                     seat.LockedAt = now;
                     seat.UpdatedAt = now;
 
-                    // Create seat lock record
                     var seatLock = new SeatLock
                     {
                         SeatId = seat.SeatId,
@@ -143,14 +137,12 @@ namespace BusTicketingSystem.Services
                     response.LockedSeatNumbers.Add(seatNumber);
                 }
 
-                // Update all seats at once
                 var seatsToUpdate = seats.Where(s => response.LockedSeatNumbers.Contains(s.SeatNumber)).ToList();
                 if (seatsToUpdate.Count > 0)
                 {
                     await _seatRepository.UpdateManyAsync(seatsToUpdate);
                 }
 
-                // Save all changes at once (this includes both seats and seat locks)
                 await _seatRepository.SaveChangesAsync();
 
                 response.Success = response.FailedSeatNumbers.Count == 0;
@@ -159,7 +151,6 @@ namespace BusTicketingSystem.Services
                     ? $"All {response.LockedSeatNumbers.Count} seats locked successfully."
                     : $"Locked {response.LockedSeatNumbers.Count} seats. Failed: {response.FailedSeatNumbers.Count}";
 
-                // Audit log (outside of transaction concern)
                 await _auditRepository.LogAuditAsync(
                     "LOCK_SEATS",
                     "Seat",
@@ -218,7 +209,6 @@ namespace BusTicketingSystem.Services
                         continue;
                     }
 
-                    // Release the seat
                     seat.SeatStatus = "Available";
                     seat.LockedByUserId = null;
                     seat.LockedAt = null;
@@ -227,7 +217,6 @@ namespace BusTicketingSystem.Services
                     response.ReleasedSeatNumbers.Add(seatNumber);
                 }
 
-                // Update seats
                 var seatsToUpdate = seats.Where(s => response.ReleasedSeatNumbers.Contains(s.SeatNumber)).ToList();
                 if (seatsToUpdate.Count > 0)
                 {
@@ -240,7 +229,6 @@ namespace BusTicketingSystem.Services
                     ? $"All {response.ReleasedSeatNumbers.Count} seats released successfully."
                     : $"Released {response.ReleasedSeatNumbers.Count} seats. Failed: {response.FailedSeatNumbers.Count}";
 
-                // Audit log
                 await _auditRepository.LogAuditAsync(
                     "RELEASE_SEATS",
                     "Seat",
@@ -276,7 +264,6 @@ namespace BusTicketingSystem.Services
             {
                 var seats = await _seatRepository.GetSeatsByNumbersAsync(scheduleId, seatNumbers);
 
-                // Validate all seats are locked by this user
                 foreach (var seatNumber in seatNumbers)
                 {
                     var seat = seats.FirstOrDefault(s => s.SeatNumber == seatNumber);
@@ -290,7 +277,6 @@ namespace BusTicketingSystem.Services
                     if (seat.LockedByUserId != userId)
                         throw new Exception($"Seat {seatNumber} is not locked by you.");
 
-                    // Convert to booked
                     seat.SeatStatus = "Booked";
                     seat.BookingId = bookingId;
                     seat.LockedByUserId = null;
@@ -330,7 +316,6 @@ namespace BusTicketingSystem.Services
                     if (seat.SeatStatus != "Booked")
                         throw new Exception($"Seat {seatNumber} is not booked.");
 
-                    // Convert back to available
                     seat.SeatStatus = "Available";
                     seat.BookingId = null;
                     seat.UpdatedAt = DateTime.UtcNow;

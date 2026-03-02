@@ -22,15 +22,12 @@ namespace BusTicketingSystem.Data
         public DbSet<Seat> Seats { get; set; }
         public DbSet<SeatLock> SeatLocks { get; set; }
 
-        // Payment and Refund
         public DbSet<Payment> Payments { get; set; }
         public DbSet<Refund> Refunds { get; set; }
 
-        // Passenger and Policies
         public DbSet<Passenger> Passengers { get; set; }
         public DbSet<CancellationPolicy> CancellationPolicies { get; set; }
 
-        // Error Logging
         public DbSet<ErrorLog> ErrorLogs { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -95,7 +92,6 @@ namespace BusTicketingSystem.Data
                     .IsUnique()
                     .HasFilter("[IsDeleted] = 0");
 
-                // Query Filter for Soft Delete
                 entity.HasQueryFilter(r => !r.IsDeleted);
             });
 
@@ -103,23 +99,17 @@ namespace BusTicketingSystem.Data
             {
                 entity.HasKey(s => s.ScheduleId);
 
-                // 🔗 Foreign Key: Bus
                 entity.HasOne(s => s.Bus)
                     .WithMany()
                     .HasForeignKey(s => s.BusId)
                     .OnDelete(DeleteBehavior.Restrict);
 
-                // 🔗 Foreign Key: Route
                 entity.HasOne(s => s.Route)
                     .WithMany()
                     .HasForeignKey(s => s.RouteId)
                     .OnDelete(DeleteBehavior.Restrict);
 
-                // 💰 Decimal Precision
-                //entity.Property(s => s.Fare)
-                //    .HasColumnType("decimal(10,2)");
 
-                // 🕒 Required Fields
                 entity.Property(s => s.DepartureTime)
                     .IsRequired();
 
@@ -135,18 +125,17 @@ namespace BusTicketingSystem.Data
                 entity.Property(s => s.CreatedAt)
                     .HasDefaultValueSql("GETUTCDATE()");
 
-                // 🔒 Composite Unique Constraint
+                // Composite Unique Constraint
                 entity.HasIndex(s => new { s.BusId, s.RouteId, s.DepartureTime, s.TravelDate })
                     .IsUnique()
                     .HasFilter("[IsDeleted] = 0");
 
-                // 🔍 Performance Indexes
+                // Performance Indexes
                 entity.HasIndex(s => s.BusId);
                 entity.HasIndex(s => s.RouteId);
                 entity.HasIndex(s => s.DepartureTime);
                 entity.HasIndex(s => s.TravelDate);
 
-                // 🧹 Soft Delete Query Filter
                 entity.HasQueryFilter(s => !s.IsDeleted);
             });
 

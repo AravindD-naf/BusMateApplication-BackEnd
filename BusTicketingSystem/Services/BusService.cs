@@ -144,7 +144,6 @@ namespace BusTicketingSystem.Services
 
             await _busRepository.UpdateAsync(bus);
 
-            // Audit Logging
             var userIdClaim = _httpContextAccessor.HttpContext?.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
             if (!int.TryParse(userIdClaim, out int userId))

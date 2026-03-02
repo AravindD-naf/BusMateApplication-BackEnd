@@ -8,9 +8,7 @@ using UnauthorizedAccessException = BusTicketingSystem.Exceptions.UnauthorizedAc
 
 namespace BusTicketingSystem.Services
 {
-    /// <summary>
-    /// Service for managing passenger details
-    /// </summary>
+
     public class PassengerService : IPassengerService
     {
         private readonly IPassengerRepository _passengerRepository;
@@ -30,9 +28,7 @@ namespace BusTicketingSystem.Services
             _auditRepository = auditRepository;
         }
 
-        /// <summary>
-        /// Add passengers to booking
-        /// </summary>
+    
         public async Task<ApiResponse<List<PassengerResponseDto>>> AddPassengersAsync(
             AddPassengerRequestDto dto,
             int userId,
@@ -108,7 +104,6 @@ namespace BusTicketingSystem.Services
             await _passengerRepository.AddManyAsync(passengers);
             await _passengerRepository.SaveChangesAsync();
 
-            // Audit log
             await _auditRepository.LogAuditAsync(
                 "ADD_PASSENGERS",
                 "Passenger",
@@ -122,9 +117,7 @@ namespace BusTicketingSystem.Services
                 passengers.Select(MapToDto).ToList());
         }
 
-        /// <summary>
-        /// Get all passengers for a booking
-        /// </summary>
+  
         public async Task<ApiResponse<List<PassengerResponseDto>>> GetBookingPassengersAsync(int bookingId)
         {
             var passengers = await _passengerRepository.GetByBookingIdAsync(bookingId);
@@ -132,22 +125,17 @@ namespace BusTicketingSystem.Services
                 passengers.Select(MapToDto).ToList());
         }
 
-        /// <summary>
-        /// Update passenger details
-        /// </summary>
+  
         public async Task<ApiResponse<PassengerResponseDto>> UpdatePassengerAsync(
             int passengerId,
             PassengerDetailDto dto,
             int userId,
             string ipAddress)
         {
-            // This would be extended in full implementation
             throw new NotImplementedException();
         }
 
-        /// <summary>
-        /// Validate all passengers for booking are filled
-        /// </summary>
+   
         public async Task<ApiResponse<bool>> ValidatePassengersAsync(int bookingId)
         {
             var booking = await _bookingRepository.GetByIdAsync(bookingId);

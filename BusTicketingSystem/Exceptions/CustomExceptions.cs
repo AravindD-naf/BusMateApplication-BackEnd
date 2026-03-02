@@ -1,9 +1,6 @@
 namespace BusTicketingSystem.Exceptions
 {
-    /// <summary>
-    /// Thrown when a requested resource is not found
-    /// Returns HTTP 404
-    /// </summary>
+   
     public class ResourceNotFoundException : ApplicationException
     {
         public ResourceNotFoundException(
@@ -25,10 +22,7 @@ namespace BusTicketingSystem.Exceptions
         }
     }
 
-    /// <summary>
-    /// Thrown when there's a conflict (e.g., duplicate resource, invalid state)
-    /// Returns HTTP 409
-    /// </summary>
+
     public class ConflictException : ApplicationException
     {
         public ConflictException(
@@ -45,10 +39,7 @@ namespace BusTicketingSystem.Exceptions
         }
     }
 
-    /// <summary>
-    /// Thrown when input validation fails
-    /// Returns HTTP 400
-    /// </summary>
+
     public class ValidationException : ApplicationException
     {
         public ValidationException(
@@ -64,9 +55,7 @@ namespace BusTicketingSystem.Exceptions
         {
         }
 
-        /// <summary>
-        /// Create validation exception with specific field error
-        /// </summary>
+
         public static ValidationException ForField(string fieldName, string message)
         {
             var ex = new ValidationException($"Validation failed for field: {fieldName}");
@@ -74,9 +63,6 @@ namespace BusTicketingSystem.Exceptions
             return ex;
         }
 
-        /// <summary>
-        /// Create validation exception with multiple field errors
-        /// </summary>
         public static ValidationException ForFields(Dictionary<string, string> errors)
         {
             var ex = new ValidationException("Validation failed");
@@ -88,10 +74,7 @@ namespace BusTicketingSystem.Exceptions
         }
     }
 
-    /// <summary>
-    /// Thrown when payment processing fails
-    /// Returns HTTP 402 or 400
-    /// </summary>
+
     public class PaymentOperationException : ApplicationException
     {
         public enum PaymentErrorType
@@ -133,10 +116,7 @@ namespace BusTicketingSystem.Exceptions
         }
     }
 
-    /// <summary>
-    /// Thrown when refund processing fails
-    /// Returns HTTP 400 or 500
-    /// </summary>
+
     public class RefundOperationException : ApplicationException
     {
         public enum RefundErrorType
@@ -179,10 +159,7 @@ namespace BusTicketingSystem.Exceptions
         }
     }
 
-    /// <summary>
-    /// Thrown when seat operation fails
-    /// Returns HTTP 400 or 409
-    /// </summary>
+
     public class SeatOperationException : ApplicationException
     {
         public enum SeatErrorType
@@ -226,10 +203,7 @@ namespace BusTicketingSystem.Exceptions
         }
     }
 
-    /// <summary>
-    /// Thrown when booking operation fails
-    /// Returns HTTP 400 or 409
-    /// </summary>
+ 
     public class BookingOperationException : ApplicationException
     {
         public enum BookingErrorType
@@ -276,10 +250,7 @@ namespace BusTicketingSystem.Exceptions
         }
     }
 
-    /// <summary>
-    /// Thrown when there's a concurrency/race condition
-    /// Returns HTTP 409
-    /// </summary>
+
     public class ConcurrencyException : ApplicationException
     {
         public ConcurrencyException(
@@ -295,10 +266,7 @@ namespace BusTicketingSystem.Exceptions
         }
     }
 
-    /// <summary>
-    /// Thrown when database operation fails
-    /// Returns HTTP 500
-    /// </summary>
+
     public class DatabaseException : ApplicationException
     {
         public DatabaseException(
@@ -314,10 +282,7 @@ namespace BusTicketingSystem.Exceptions
         }
     }
 
-    /// <summary>
-    /// Thrown when external service fails
-    /// Returns HTTP 503
-    /// </summary>
+
     public class ExternalServiceException : ApplicationException
     {
         public string ServiceName { get; set; }
@@ -338,10 +303,7 @@ namespace BusTicketingSystem.Exceptions
         }
     }
 
-    /// <summary>
-    /// Thrown when operation timeout occurs
-    /// Returns HTTP 408
-    /// </summary>
+
     public class OperationTimeoutException : ApplicationException
     {
         public OperationTimeoutException(

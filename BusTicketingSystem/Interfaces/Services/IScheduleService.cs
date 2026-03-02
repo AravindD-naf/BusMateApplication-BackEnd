@@ -26,11 +26,9 @@ namespace BusTicketingSystem.Interfaces.Services
             int userId,
             string ipAddress);
 
-        // 1️⃣ Get by From City
         Task<ApiResponse<List<ScheduleResponseDto>>>
             GetByFromCityAsync(string fromCity);
 
-        // 2️⃣ Get by To City
         Task<ApiResponse<List<ScheduleResponseDto>>>
             GetByToCityAsync(string toCity);
 

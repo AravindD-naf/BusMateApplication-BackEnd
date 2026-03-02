@@ -30,14 +30,7 @@ namespace BusTicketingSystem.Services
             _auditRepository = auditRepository;
         }
 
-        // 🎟 CREATE BOOKING
-        /// <summary>
-        /// Create booking with previously locked seats
-        /// - Validates all seats are locked by the user
-        /// - Converts locked seats to booked
-        /// - Updates schedule available seats
-        /// - Creates audit log
-        /// </summary>
+    
         public async Task<ApiResponse<BookingResponseDto>> CreateBookingAsync(
             CreateBookingRequestDto dto,
             int userId,
@@ -51,7 +44,6 @@ namespace BusTicketingSystem.Services
             if (schedule == null || schedule.IsDeleted || !schedule.IsActive)
                 throw new ResourceNotFoundException("Schedule", dto.ScheduleId.ToString());
 
-            // Travel date check
             DateTime departureDateTime =
                 schedule.TravelDate.Add(schedule.DepartureTime);
 
@@ -67,7 +59,6 @@ namespace BusTicketingSystem.Services
 
             try
             {
-                // Verify all seats are locked by this user
                 var seats = await _seatRepository.GetSeatsByNumbersAsync(dto.ScheduleId, dto.SeatNumbers);
 
                 foreach (var seatNumber in dto.SeatNumbers)
@@ -90,7 +81,6 @@ namespace BusTicketingSystem.Services
                             SeatOperationException.SeatErrorType.SeatNotAvailable);
                 }
 
-                // Create booking record
                 decimal seatPrice = 500; 
                 decimal totalAmount = dto.SeatNumbers.Count * seatPrice;
 
@@ -107,19 +97,16 @@ namespace BusTicketingSystem.Services
                 await _bookingRepository.AddAsync(booking);
                 await _bookingRepository.SaveChangesAsync();
                 
-                // Convert locked seats to booked
                 await _seatService.ConfirmBookingSeatsAsync(
                     booking.BookingId,
                     dto.ScheduleId,
                     dto.SeatNumbers,
                     userId);
 
-                // Deduct seats from schedule
                 schedule.AvailableSeats -= dto.SeatNumbers.Count;
                 await _scheduleRepository.UpdateAsync(schedule);
                 await _scheduleRepository.SaveChangesAsync();
 
-                // Audit log
                 await _auditRepository.LogAuditAsync(
                     "CREATE",
                     "Booking",
@@ -138,7 +125,6 @@ namespace BusTicketingSystem.Services
             }
         }
 
-        // 👤 USER BOOKINGS
         public async Task<ApiResponse<List<BookingResponseDto>>>
             GetMyBookingsAsync(int userId)
         {
@@ -148,7 +134,6 @@ namespace BusTicketingSystem.Services
                 .SuccessResponse(bookings.Select(MapToDto).ToList());
         }
 
-        // 🛠 ADMIN BOOKINGS
         public async Task<ApiResponse<List<BookingResponseDto>>>
             GetAllBookingsAsync()
         {
@@ -158,7 +143,6 @@ namespace BusTicketingSystem.Services
                 .SuccessResponse(bookings.Select(MapToDto).ToList());
         }
 
-        // 📋 GET BOOKING BY ID WITH DETAILS
         public async Task<ApiResponse<BookingDetailResponseDto>> GetBookingByIdAsync(int bookingId)
         {
             var booking = await _bookingRepository.GetByIdAsync(bookingId);
@@ -185,12 +169,10 @@ namespace BusTicketingSystem.Services
                 BookingStatus = booking.BookingStatus.ToString(),
                 BookingDate = booking.BookingDate,
                 
-                // Route Details
                 RouteId = schedule.Route.RouteId,
                 Source = schedule.Route.Source,
                 Destination = schedule.Route.Destination,
                 
-                // Bus Details
                 BusId = schedule.Bus.BusId,
                 BusNumber = schedule.Bus.BusNumber,
                 BusType = schedule.Bus.BusType,
@@ -198,7 +180,6 @@ namespace BusTicketingSystem.Services
                 OperatorName = schedule.Bus.OperatorName,
                 RatingAverage = schedule.Bus.RatingAverage,
                 
-                // Schedule Details
                 TravelDate = schedule.TravelDate,
                 DepartureTime = schedule.DepartureTime,
                 ArrivalTime = schedule.ArrivalTime,
@@ -209,14 +190,7 @@ namespace BusTicketingSystem.Services
                 .SuccessResponse(bookingDetail);
         }
 
-        // ❌ CANCEL BOOKING
-        /// <summary>
-        /// Cancel booking and release booked seats back to available
-        /// - Validates booking exists and user can cancel
-        /// - Releases booked seats
-        /// - Updates schedule available seats
-        /// - Creates audit log
-        /// </summary>
+      
         public async Task<ApiResponse<bool>> CancelBookingAsync(
             int bookingId,
             int userId,
@@ -250,7 +224,6 @@ namespace BusTicketingSystem.Services
             {
                 try
                 {
-                    // Get booked seats for this booking
                     var seats = await _seatRepository.GetSeatsByScheduleIdAsync(booking.ScheduleId);
                     var bookedSeats = seats.Where(s => s.BookingId == bookingId && s.SeatStatus == "Booked").ToList();
 
@@ -272,7 +245,6 @@ namespace BusTicketingSystem.Services
                     await _scheduleRepository.UpdateAsync(schedule);
                     await _bookingRepository.UpdateAsync(booking);
                     
-                    // Audit log
                     await _auditRepository.LogAuditAsync(
                         "CANCEL",
                         "Booking",

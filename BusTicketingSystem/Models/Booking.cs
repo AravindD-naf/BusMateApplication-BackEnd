@@ -28,32 +28,21 @@ namespace BusTicketingSystem.Models
         [Column(TypeName = "decimal(10,2)")]
         public decimal TotalAmount { get; set; }
 
-        /// <summary>
-        /// Booking status using enum (Pending, PaymentProcessing, Confirmed, etc.)
-        /// </summary>
+  
         [Required]
         public BookingStatus BookingStatus { get; set; } = BookingStatus.Pending;
 
-        /// <summary>
-        /// When booking was created (locked seats)
-        /// </summary>
+   
         [Required]
         public DateTime BookingDate { get; set; } = DateTime.UtcNow;
 
-        /// <summary>
-        /// When booking status was last updated
-        /// </summary>
+  
         public DateTime? LastStatusChangeAt { get; set; }
 
-        /// <summary>
-        /// Cancellation reason (if cancelled)
-        /// </summary>
         [MaxLength(500)]
         public string CancellationReason { get; set; } = string.Empty;
 
-        /// <summary>
-        /// Soft delete flag
-        /// </summary>
+   
         public bool IsDeleted { get; set; } = false;
 
         // Navigation properties

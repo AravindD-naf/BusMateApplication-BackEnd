@@ -21,7 +21,6 @@ namespace BusTicketingSystem.Controllers
             _routeService = routeService;
         }
 
-        // 🔹 GET: All Routes (Public)
         [AllowAnonymous]
         [HttpGet]
         public async Task<IActionResult> GetAll(int pageNumber = 1, int pageSize = 10)
@@ -30,7 +29,6 @@ namespace BusTicketingSystem.Controllers
             return Ok(response);
         }
 
-        // 🔹 GET: Route By Id (Public)
         [AllowAnonymous]
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById(int id)
@@ -39,7 +37,6 @@ namespace BusTicketingSystem.Controllers
             return Ok(response);
         }
 
-        // 🔒 POST: Create Route (Admin Only)
         [Authorize(Roles = "Admin")]
         [HttpPost]
         public async Task<IActionResult> Create(RouteCreateRequestDto request)
@@ -53,7 +50,6 @@ namespace BusTicketingSystem.Controllers
             return Ok(response);
         }
 
-        // 🔒 PUT: Update Route (Admin Only)
         [HttpPut("{id}")]
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Update(int id, RouteUpdateRequestDto request)
@@ -67,7 +63,6 @@ namespace BusTicketingSystem.Controllers
             return Ok(response);
         }
 
-        // 🔒 DELETE: Soft Delete Route (Admin Only)
         [HttpDelete("{id}")]
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Delete(int id)
@@ -81,7 +76,6 @@ namespace BusTicketingSystem.Controllers
             return Ok(response);
         }
 
-        // 🔹 GET: Routes by Source (Public)
         [AllowAnonymous]
         [HttpGet("by-source")]
         public async Task<IActionResult> GetBySource(
@@ -95,7 +89,6 @@ namespace BusTicketingSystem.Controllers
             return Ok(response);
         }
 
-        // 🔹 GET: Routes by Destination (Public)
         [AllowAnonymous]
         [HttpGet("by-destination")]
         public async Task<IActionResult> GetByDestination(
@@ -109,7 +102,6 @@ namespace BusTicketingSystem.Controllers
             return Ok(response);
         }
 
-        // 🔍 Dynamic Route Search (Public)
         [AllowAnonymous]
         [HttpGet("search")]
         public async Task<IActionResult> Search(
@@ -124,9 +116,6 @@ namespace BusTicketingSystem.Controllers
             return Ok(response);
         }
 
-        // -----------------------
-        // 🔧 Helper Methods
-        // -----------------------
 
         private int GetUserId()
         {

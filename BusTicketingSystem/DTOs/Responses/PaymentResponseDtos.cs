@@ -2,9 +2,7 @@ using BusTicketingSystem.Models.Enums;
 
 namespace BusTicketingSystem.DTOs.Responses
 {
-    /// <summary>
-    /// Payment response DTO
-    /// </summary>
+  
     public class PaymentResponseDto
     {
         public int PaymentId { get; set; }
@@ -19,9 +17,7 @@ namespace BusTicketingSystem.DTOs.Responses
         public DateTime ExpiresAt { get; set; }
     }
 
-    /// <summary>
-    /// Refund response DTO
-    /// </summary>
+
     public class RefundResponseDto
     {
         public int RefundId { get; set; }
@@ -35,9 +31,6 @@ namespace BusTicketingSystem.DTOs.Responses
         public DateTime? ProcessedAt { get; set; }
     }
 
-    /// <summary>
-    /// Extended booking response with payment info
-    /// </summary>
     public class BookingWithPaymentResponseDto
     {
         public int BookingId { get; set; }
@@ -55,9 +48,7 @@ namespace BusTicketingSystem.DTOs.Responses
         public List<PassengerResponseDto> Passengers { get; set; } = new();
     }
 
-    /// <summary>
     /// Passenger response DTO
-    /// </summary>
     public class PassengerResponseDto
     {
         public int PassengerId { get; set; }

@@ -8,9 +8,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace BusTicketingSystem.Services
 {
-    /// <summary>
-    /// Service for logging and tracking errors
-    /// </summary>
+   
     public interface IErrorLogService
     {
         Task LogErrorAsync(
@@ -44,9 +42,7 @@ namespace BusTicketingSystem.Services
             _logger = logger;
         }
 
-        /// <summary>
-        /// Log an exception with full context
-        /// </summary>
+      
         public async Task LogErrorAsync(
             Exception exception,
             HttpContext context,
@@ -83,7 +79,6 @@ namespace BusTicketingSystem.Services
                 errorLog.InnerExceptionMessage = exception.InnerException?.Message;
                 errorLog.UserId = userId;
 
-                // Capture HTTP context information
                 if (context != null)
                 {
                     errorLog.RequestUrl = $"{context.Request.Scheme}://{context.Request.Host}{context.Request.Path}";
@@ -122,24 +117,19 @@ namespace BusTicketingSystem.Services
                 errorLog.IsHandled = true;
                 errorLog.CreatedAt = DateTime.UtcNow;
 
-                // Add to database
                 await _context.ErrorLogs.AddAsync(errorLog);
                 await _context.SaveChangesAsync();
 
-                // Also log to application logger
                 LogToApplicationLogger(errorLog, exception);
             }
             catch (Exception logEx)
             {
-                // If error logging fails, still log to console
                 _logger.LogError(logEx, "Failed to log error to database");
                 _logger.LogError(exception, "Original exception that failed to be logged");
             }
         }
 
-        /// <summary>
-        /// Get paginated list of errors
-        /// </summary>
+ 
         public async Task<List<ErrorLog>> GetErrorsAsync(
             int pageNumber = 1,
             int pageSize = 10,
@@ -161,17 +151,13 @@ namespace BusTicketingSystem.Services
                 .ToListAsync();
         }
 
-        /// <summary>
-        /// Get specific error details
-        /// </summary>
+  
         public async Task<ErrorLog> GetErrorAsync(int errorLogId)
         {
             return await _context.ErrorLogs.FindAsync(errorLogId);
         }
 
-        /// <summary>
-        /// Mark error as resolved
-        /// </summary>
+
         public async Task MarkAsResolvedAsync(int errorLogId, string notes)
         {
             var errorLog = await _context.ErrorLogs.FindAsync(errorLogId);
@@ -184,9 +170,7 @@ namespace BusTicketingSystem.Services
             }
         }
 
-        /// <summary>
-        /// Delete old error logs to manage database size
-        /// </summary>
+  
         public async Task DeleteOldErrorsAsync(int daysToKeep = 30)
         {
             var cutoffDate = DateTime.UtcNow.AddDays(-daysToKeep);

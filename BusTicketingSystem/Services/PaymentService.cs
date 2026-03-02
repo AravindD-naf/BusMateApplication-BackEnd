@@ -9,9 +9,7 @@ using UnauthorizedAccessException = BusTicketingSystem.Exceptions.UnauthorizedAc
 
 namespace BusTicketingSystem.Services
 {
-    /// <summary>
-    /// Payment Service - Dummy/Mock Implementation (No Real Payment Processing)
-    /// </summary>
+
     public class PaymentService : IPaymentService
     {
         private readonly IPaymentRepository _paymentRepository;
@@ -37,14 +35,13 @@ namespace BusTicketingSystem.Services
             _auditRepository = auditRepository;
         }
 
-        /// <summary>
-        /// Initiate payment for booking (changes status to PaymentProcessing)
-        /// </summary>
         public async Task<ApiResponse<PaymentResponseDto>> InitiatePaymentAsync(
             int bookingId,
             decimal amount,
+            string paymentMethod,
             int userId,
-            string ipAddress)
+            string ipAddress
+            )
         {
             var booking = await _bookingRepository.GetByIdAsync(bookingId);
             if (booking == null || booking.IsDeleted)
@@ -63,11 +60,11 @@ namespace BusTicketingSystem.Services
                     "Payment amount does not match booking total",
                     PaymentOperationException.PaymentErrorType.InvalidAmount);
 
-            // Create payment record
             var payment = new Payment
             {
                 BookingId = bookingId,
                 Amount = amount,
+                PaymentMethod = paymentMethod,
                 Status = PaymentStatus.Pending,
                 CreatedAt = DateTime.UtcNow,
                 ExpiresAt = DateTime.UtcNow.AddMinutes(15)
@@ -75,29 +72,25 @@ namespace BusTicketingSystem.Services
 
             await _paymentRepository.AddAsync(payment);
 
-            // Update booking status to PaymentProcessing
             booking.BookingStatus = BookingStatus.PaymentProcessing;
             booking.LastStatusChangeAt = DateTime.UtcNow;
             await _bookingRepository.UpdateAsync(booking);
 
             await _paymentRepository.SaveChangesAsync();
 
-            // Audit log
             await _auditRepository.LogAuditAsync(
                 "INITIATE_PAYMENT",
                 "Payment",
                 payment.PaymentId.ToString(),
                 null,
-                new { bookingId, amount },
+                new { bookingId, amount, paymentMethod },
                 userId,
                 ipAddress);
 
             return ApiResponse<PaymentResponseDto>.SuccessResponse(MapToDto(payment));
         }
 
-        /// <summary>
-        /// Get payment details
-        /// </summary>
+
         public async Task<ApiResponse<PaymentResponseDto>> GetPaymentAsync(int paymentId)
         {
             var payment = await _paymentRepository.GetByIdAsync(paymentId);
@@ -107,10 +100,6 @@ namespace BusTicketingSystem.Services
             return ApiResponse<PaymentResponseDto>.SuccessResponse(MapToDto(payment));
         }
 
-        /// <summary>
-        /// Confirm payment - DUMMY IMPLEMENTATION
-        /// In real system, this is called via webhook from payment gateway
-        /// </summary>
         public async Task<ApiResponse<PaymentResponseDto>> ConfirmPaymentAsync(
             ConfirmPaymentRequestDto dto,
             int userId,
@@ -132,8 +121,7 @@ namespace BusTicketingSystem.Services
                     $"Cannot confirm payment with status: {payment.Status}",
                     PaymentOperationException.PaymentErrorType.ProcessingError);
 
-            // DUMMY PAYMENT PROCESSING
-            // In real system, gateway would validate TransactionId and amount
+         
             payment.TransactionId = dto.TransactionId;
             payment.ProcessedAt = DateTime.UtcNow;
 
@@ -155,7 +143,6 @@ namespace BusTicketingSystem.Services
             await _bookingRepository.UpdateAsync(booking);
             await _paymentRepository.SaveChangesAsync();
 
-            // Audit log
             await _auditRepository.LogAuditAsync(
                 "CONFIRM_PAYMENT",
                 "Payment",
@@ -168,9 +155,7 @@ namespace BusTicketingSystem.Services
             return ApiResponse<PaymentResponseDto>.SuccessResponse(MapToDto(payment));
         }
 
-        /// <summary>
-        /// Initiate refund for cancelled booking
-        /// </summary>
+
         public async Task<ApiResponse<RefundResponseDto>> InitiateRefundAsync(
             int bookingId,
             int userId,
@@ -207,7 +192,6 @@ namespace BusTicketingSystem.Services
             await _refundRepository.AddAsync(refund);
             await _refundRepository.SaveChangesAsync();
 
-            // Audit log
             await _auditRepository.LogAuditAsync(
                 "INITIATE_REFUND",
                 "Refund",
@@ -220,9 +204,7 @@ namespace BusTicketingSystem.Services
             return ApiResponse<RefundResponseDto>.SuccessResponse(MapToDto(refund));
         }
 
-        /// <summary>
-        /// Get refund details
-        /// </summary>
+     
         public async Task<ApiResponse<RefundResponseDto>> GetRefundAsync(int refundId)
         {
             var refund = await _refundRepository.GetByIdAsync(refundId);
@@ -232,9 +214,7 @@ namespace BusTicketingSystem.Services
             return ApiResponse<RefundResponseDto>.SuccessResponse(MapToDto(refund));
         }
 
-        /// <summary>
-        /// Confirm refund processing
-        /// </summary>
+   
         public async Task<ApiResponse<RefundResponseDto>> ConfirmRefundAsync(
             ConfirmRefundRequestDto dto,
             int userId,
@@ -257,7 +237,6 @@ namespace BusTicketingSystem.Services
             await _refundRepository.UpdateAsync(refund);
             await _refundRepository.SaveChangesAsync();
 
-            // Audit log
             await _auditRepository.LogAuditAsync(
                 "CONFIRM_REFUND",
                 "Refund",
@@ -270,9 +249,7 @@ namespace BusTicketingSystem.Services
             return ApiResponse<RefundResponseDto>.SuccessResponse(MapToDto(refund));
         }
 
-        /// <summary>
         /// Expire old payments (15 min timeout)
-        /// </summary>
         public async Task<int> ExpireOldPaymentsAsync()
         {
             var expiredPayments = await _paymentRepository.GetExpiredPaymentsAsync();
@@ -302,9 +279,7 @@ namespace BusTicketingSystem.Services
             return expiredPayments.Count;
         }
 
-        /// <summary>
-        /// Calculate refund based on cancellation policy
-        /// </summary>
+
         public async Task<(decimal refundAmount, int refundPercentage, decimal cancellationFee)> CalculateRefundAsync(
             int bookingId)
         {

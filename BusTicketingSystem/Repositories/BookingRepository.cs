@@ -14,20 +14,17 @@ namespace BusTicketingSystem.Repositories
             _context = context;
         }
 
-        // ✅ Add Booking
         public async Task AddAsync(Booking booking)
         {
             await _context.Bookings.AddAsync(booking);
         }
 
-        // ✅ Update Booking
         public async Task UpdateAsync(Booking booking)
         {
             _context.Bookings.Update(booking);
             await Task.CompletedTask;
         }
 
-        // ✅ Get Booking By Id
         public async Task<Booking?> GetByIdAsync(int bookingId)
         {
             return await _context.Bookings
@@ -38,7 +35,6 @@ namespace BusTicketingSystem.Repositories
                     !b.IsDeleted);
         }
 
-        // ✅ Get All Bookings (Admin)
         public async Task<List<Booking>> GetAllAsync()
         {
             return await _context.Bookings
@@ -49,7 +45,6 @@ namespace BusTicketingSystem.Repositories
                 .ToListAsync();
         }
 
-        // ✅ Get Bookings By User Id
         public async Task<List<Booking>> GetByUserIdAsync(int userId)
         {
             return await _context.Bookings
@@ -61,7 +56,6 @@ namespace BusTicketingSystem.Repositories
                 .ToListAsync();
         }
 
-        // ✅ Save Changes
         public async Task SaveChangesAsync()
         {
             await _context.SaveChangesAsync();
