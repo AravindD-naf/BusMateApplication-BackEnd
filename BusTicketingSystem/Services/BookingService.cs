@@ -65,83 +65,76 @@ namespace BusTicketingSystem.Services
                     $"Not enough seats available. Only {schedule.AvailableSeats} seats remaining",
                     BookingOperationException.BookingErrorType.InsufficientSeats);
 
-            // Start transaction for atomic booking
-            using (var transaction = await _scheduleRepository.BeginTransactionAsync())
+            try
             {
-                try
+                // Verify all seats are locked by this user
+                var seats = await _seatRepository.GetSeatsByNumbersAsync(dto.ScheduleId, dto.SeatNumbers);
+
+                foreach (var seatNumber in dto.SeatNumbers)
                 {
-                    // Verify all seats are locked by this user
-                    var seats = await _seatRepository.GetSeatsByNumbersAsync(dto.ScheduleId, dto.SeatNumbers);
+                    var seat = seats.FirstOrDefault(s => s.SeatNumber == seatNumber);
 
-                    foreach (var seatNumber in dto.SeatNumbers)
-                    {
-                        var seat = seats.FirstOrDefault(s => s.SeatNumber == seatNumber);
+                    if (seat == null)
+                        throw new SeatOperationException(
+                            $"Seat {seatNumber} not found",
+                            SeatOperationException.SeatErrorType.InvalidSeatNumber);
 
-                        if (seat == null)
-                            throw new SeatOperationException(
-                                $"Seat {seatNumber} not found",
-                                SeatOperationException.SeatErrorType.InvalidSeatNumber);
+                    if (seat.SeatStatus != "Locked")
+                        throw new SeatOperationException(
+                            $"Seat {seatNumber} is not locked. Please lock seats before booking",
+                            SeatOperationException.SeatErrorType.SeatNotLocked);
 
-                        if (seat.SeatStatus != "Locked")
-                            throw new SeatOperationException(
-                                $"Seat {seatNumber} is not locked. Please lock seats before booking",
-                                SeatOperationException.SeatErrorType.SeatNotLocked);
-
-                        if (seat.LockedByUserId != userId)
-                            throw new SeatOperationException(
-                                $"Seat {seatNumber} is locked by another user",
-                                SeatOperationException.SeatErrorType.SeatNotAvailable);
-                    }
-
-                    // Create booking record
-                    decimal seatPrice = 500; // Static for now (later from route)
-                    decimal totalAmount = dto.SeatNumbers.Count * seatPrice;
-
-                    var booking = new Booking
-                    {
-                        UserId = userId,
-                        ScheduleId = dto.ScheduleId,
-                        NumberOfSeats = dto.SeatNumbers.Count,
-                        TotalAmount = totalAmount,
-                        BookingStatus = BookingStatus.Pending,
-                        BookingDate = DateTime.UtcNow
-                    };
-
-                    await _bookingRepository.AddAsync(booking);
-                    await _bookingRepository.SaveChangesAsync();
-
-                    // Convert locked seats to booked
-                    await _seatService.ConfirmBookingSeatsAsync(
-                        booking.BookingId,
-                        dto.ScheduleId,
-                        dto.SeatNumbers,
-                        userId);
-
-                    // Deduct seats from schedule
-                    schedule.AvailableSeats -= dto.SeatNumbers.Count;
-                    await _scheduleRepository.UpdateAsync(schedule);
-                    await _scheduleRepository.SaveChangesAsync();
-
-                    // Audit log
-                    await _auditRepository.LogAuditAsync(
-                        "CREATE",
-                        "Booking",
-                        booking.BookingId.ToString(),
-                        null,
-                        new { bookingId = booking.BookingId, seats = dto.SeatNumbers, amount = totalAmount },
-                        userId,
-                        ipAddress);
-
-                    await transaction.CommitAsync();
-
-                    return ApiResponse<BookingResponseDto>
-                        .SuccessResponse(MapToDto(booking));
+                    if (seat.LockedByUserId != userId)
+                        throw new SeatOperationException(
+                            $"Seat {seatNumber} is locked by another user",
+                            SeatOperationException.SeatErrorType.SeatNotAvailable);
                 }
-                catch (Exception ex)
+
+                // Create booking record
+                decimal seatPrice = 500; 
+                decimal totalAmount = dto.SeatNumbers.Count * seatPrice;
+
+                var booking = new Booking
                 {
-                    await transaction.RollbackAsync();
-                    throw;
-                }
+                    UserId = userId,
+                    ScheduleId = dto.ScheduleId,
+                    NumberOfSeats = dto.SeatNumbers.Count,
+                    TotalAmount = totalAmount,
+                    BookingStatus = BookingStatus.Pending,
+                    BookingDate = DateTime.UtcNow
+                };
+
+                await _bookingRepository.AddAsync(booking);
+                await _bookingRepository.SaveChangesAsync();
+                
+                // Convert locked seats to booked
+                await _seatService.ConfirmBookingSeatsAsync(
+                    booking.BookingId,
+                    dto.ScheduleId,
+                    dto.SeatNumbers,
+                    userId);
+
+                // Deduct seats from schedule
+                schedule.AvailableSeats -= dto.SeatNumbers.Count;
+                await _scheduleRepository.UpdateAsync(schedule);
+                await _scheduleRepository.SaveChangesAsync();
+
+                // Audit log
+                await _auditRepository.LogAuditAsync(
+                    "CREATE",
+                    "Booking",
+                    booking.BookingId.ToString(),
+                    null,
+                    new { bookingId = booking.BookingId, seats = dto.SeatNumbers, amount = totalAmount },
+                    userId,
+                    ipAddress);
+
+                return ApiResponse<BookingResponseDto>
+                    .SuccessResponse(MapToDto(booking));
+            }
+            catch (Exception ex)
+            {
+                throw;
             }
         }
 

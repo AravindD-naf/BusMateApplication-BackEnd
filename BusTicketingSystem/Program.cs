@@ -108,6 +108,25 @@ builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<JwtHelper>();
 builder.Services.AddHttpContextAccessor();
 
+// CORS CONFIGURATION
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowAll", policy =>
+    {
+        policy.AllowAnyOrigin()
+              .AllowAnyMethod()
+              .AllowAnyHeader();
+    });
+
+    options.AddPolicy("AllowSpecific", policy =>
+    {
+        policy.WithOrigins("http://localhost:5000", "http://localhost:5001", "https://localhost:5000", "https://localhost:5001")
+              .AllowAnyMethod()
+              .AllowAnyHeader()
+              .AllowCredentials();
+    });
+});
+
 builder.Services.AddControllers();
 
 // SWAGGER/OPENAPI
@@ -133,6 +152,10 @@ app.UseSwaggerUI(options =>
 app.UseMiddleware<ExceptionMiddleware>();
 
 app.UseHttpsRedirection();
+
+// Enable CORS before authentication
+app.UseCors("AllowAll");
+
 app.UseRateLimiter();
 
 app.UseAuthentication();

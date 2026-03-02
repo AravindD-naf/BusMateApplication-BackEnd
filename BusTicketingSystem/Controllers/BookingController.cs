@@ -209,7 +209,7 @@ namespace BusTicketingSystem.Controllers
         /// </summary>
         [Authorize(Roles = "Customer")]
         [HttpPost]
-        public async Task<IActionResult> Create(CreateBookingRequestDto dto)
+        public async Task<IActionResult> Create([FromBody] CreateBookingRequestDto dto)
         {
             try
             {
