@@ -11,7 +11,7 @@ namespace BusTicketingSystem.DTOs.Requests
         public string BusType { get; set; } = string.Empty;
 
         [Required]
-        [Range(10, 100)]
+        [Range(1, 40, ErrorMessage = "Total seats must be between 1 and 40")]
         public int TotalSeats { get; set; }
 
         [Required]

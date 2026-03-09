@@ -41,19 +41,36 @@ namespace BusTicketingSystem.Controllers
         }
 
         [AllowAnonymous]
-        [HttpGet]
-        public async Task<IActionResult> GetAllBuses(int pageNumber = 1, int pageSize = 10)
+        [HttpPost("get-all")]
+        public async Task<IActionResult> GetAllBuses([FromBody] PaginationRequest request)
         {
-            var result = await _busService.GetAllBusesAsync(pageNumber, pageSize);
-            return Ok(ApiResponse<List<BusResponse>>.SuccessResponse(result));
+            try
+            {
+                if (request.PageNumber < 1) request.PageNumber = 1;
+                if (request.PageSize < 1) request.PageSize = 10;
+
+                var result = await _busService.GetAllBusesAsync(request.PageNumber, request.PageSize);
+                return Ok(ApiResponse<List<BusResponse>>.SuccessResponse("Buses retrieved successfully", result));
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ApiResponse<string>.FailureResponse(ex.Message));
+            }
         }
 
         [AllowAnonymous]
-        [HttpGet("{id}")]
+        [HttpPost("{id}")]
         public async Task<IActionResult> GetBus(int id)
         {
-            var result = await _busService.GetBusByIdAsync(id);
-            return Ok(ApiResponse<BusResponse>.SuccessResponse(result));
+            try
+            {
+                var result = await _busService.GetBusByIdAsync(id);
+                return Ok(ApiResponse<BusResponse>.SuccessResponse("Bus retrieved successfully", result));
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ApiResponse<string>.FailureResponse(ex.Message));
+            }
         }
 
         [Authorize(Roles = "Admin")]
@@ -89,22 +106,34 @@ namespace BusTicketingSystem.Controllers
 
 
         [AllowAnonymous]
-        [HttpGet("by-operator")]
-        public async Task<IActionResult> GetByOperator(
-            string operatorName,
-            int pageNumber = 1,
-            int pageSize = 10)
+        [HttpPost("search-by-operator")]
+        public async Task<IActionResult> GetByOperator([FromBody] OperatorSearchRequest request)
         {
-            var (buses, totalCount) =
-                await _busService.GetByOperatorAsync(operatorName, pageNumber, pageSize);
-
-            return Ok(ApiResponse<object>.SuccessResponse(new
+            try
             {
-                totalCount,
-                pageNumber,
-                pageSize,
-                data = buses
-            }));
+                if (string.IsNullOrWhiteSpace(request.OperatorName))
+                    return BadRequest(ApiResponse<string>.FailureResponse("Operator name is required"));
+
+                if (request.PageNumber < 1) request.PageNumber = 1;
+                if (request.PageSize < 1) request.PageSize = 10;
+
+                var (buses, totalCount) = await _busService.GetByOperatorAsync(
+                    request.OperatorName,
+                    request.PageNumber,
+                    request.PageSize);
+
+                return Ok(ApiResponse<object>.SuccessResponse("Buses retrieved successfully", new
+                {
+                    totalCount,
+                    pageNumber = request.PageNumber,
+                    pageSize = request.PageSize,
+                    data = buses
+                }));
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ApiResponse<string>.FailureResponse(ex.Message));
+            }
         }
     }
 }

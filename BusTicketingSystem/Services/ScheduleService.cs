@@ -1,9 +1,12 @@
 ﻿using BusTicketingSystem.Common.Responses;
+using BusTicketingSystem.Data;
 using BusTicketingSystem.DTOs;
 using BusTicketingSystem.Exceptions;
 using BusTicketingSystem.Interfaces.Repositories;
 using BusTicketingSystem.Interfaces.Services;
 using BusTicketingSystem.Models;
+using Microsoft.Data.SqlClient;
+using Microsoft.EntityFrameworkCore;
 using System.Text.Encodings.Web;
 using System.Text.Json;
 
@@ -15,18 +18,21 @@ namespace BusTicketingSystem.Services
         private readonly IRouteRepository _routeRepository;
         private readonly IBusRepository _busRepository;
         private readonly IAuditRepository _auditRepository;
+        private readonly ApplicationDbContext _dbContext;
         private readonly JsonSerializerOptions _jsonOptions;
 
         public ScheduleService(
             IScheduleRepository scheduleRepository,
             IRouteRepository routeRepository,
             IBusRepository busRepository,
-            IAuditRepository auditRepository)
+            IAuditRepository auditRepository,
+            ApplicationDbContext dbContext)
         {
             _scheduleRepository = scheduleRepository;
             _routeRepository = routeRepository;
             _busRepository = busRepository;
             _auditRepository = auditRepository;
+            _dbContext = dbContext;
             _jsonOptions = new JsonSerializerOptions
             {
                 Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
@@ -73,6 +79,27 @@ namespace BusTicketingSystem.Services
 
             await _scheduleRepository.AddAsync(schedule);
             await _scheduleRepository.SaveChangesAsync();
+
+            // Call stored procedure to generate seats for the schedule
+            try
+            {
+                var scheduleIdParam = new SqlParameter("@ScheduleId", schedule.ScheduleId);
+                await _dbContext.Database.ExecuteSqlInterpolatedAsync(
+                    $"EXEC sp_GenerateSeatsForSchedule {scheduleIdParam}");
+            }
+            catch (Exception ex)
+            {
+                throw new Exception("Error generating seats for schedule: " + ex.Message);
+            }
+
+            // Activate the bus when it's scheduled to a route
+            var busToUpdate = await _busRepository.GetByIdAsync(dto.BusId);
+            if (busToUpdate != null && !busToUpdate.IsActive)
+            {
+                busToUpdate.IsActive = true;
+                busToUpdate.UpdatedAt = DateTime.UtcNow;
+                await _busRepository.UpdateAsync(busToUpdate);
+            }
 
             await _auditRepository.LogAuditAsync(
                 "CREATE",

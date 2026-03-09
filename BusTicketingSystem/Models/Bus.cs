@@ -15,6 +15,7 @@ namespace BusTicketingSystem.Models
         public string BusType { get; set; } = string.Empty; // AC / Non-AC / Sleeper
 
         [Required]
+        [Range(1, 40, ErrorMessage = "Total seats must be between 1 and 40")]
         public int TotalSeats { get; set; }
 
         [Required]
@@ -23,7 +24,7 @@ namespace BusTicketingSystem.Models
 
         public double RatingAverage { get; set; } = 0;
 
-        public bool IsActive { get; set; } = true;
+        public bool IsActive { get; set; } = false;
 
         public bool IsDeleted { get; set; } = false;
 

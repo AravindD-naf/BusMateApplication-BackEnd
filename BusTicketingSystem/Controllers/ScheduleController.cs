@@ -48,6 +48,8 @@
 
 
 using BusTicketingSystem.DTOs;
+using BusTicketingSystem.DTOs.Requests;
+using BusTicketingSystem.Helpers;
 using BusTicketingSystem.Interfaces.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -78,23 +80,36 @@ namespace BusTicketingSystem.Controllers
         }
 
         [AllowAnonymous]
-        [HttpGet]
-        public async Task<IActionResult> GetAll(
-            [FromQuery] int pageNumber = 1,
-            [FromQuery] int pageSize = 10)
+        [HttpPost("get-all")]
+        public async Task<IActionResult> GetAll([FromBody] PaginationRequest request)
         {
-            var response = await _scheduleService
-                .GetAllAsync(pageNumber, pageSize);
+            try
+            {
+                if (request.PageNumber < 1) request.PageNumber = 1;
+                if (request.PageSize < 1) request.PageSize = 10;
 
-            return Ok(response);
+                var response = await _scheduleService.GetAllAsync(request.PageNumber, request.PageSize);
+                return Ok(response);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ApiResponse<string>.FailureResponse(ex.Message));
+            }
         }
 
         [AllowAnonymous]
-        [HttpGet("{id}")]
+        [HttpPost("{id}")]
         public async Task<IActionResult> GetById(int id)
         {
-            var response = await _scheduleService.GetByIdAsync(id);
-            return Ok(response);
+            try
+            {
+                var response = await _scheduleService.GetByIdAsync(id);
+                return Ok(response);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ApiResponse<string>.FailureResponse(ex.Message));
+            }
         }
 
         [Authorize(Roles = "Admin")]
@@ -126,32 +141,58 @@ namespace BusTicketingSystem.Controllers
 
 
         [AllowAnonymous]
-        [HttpGet("from/{fromCity}")]
-        public async Task<IActionResult> GetByFromCity(string fromCity)
+        [HttpPost("search-by-from-city")]
+        public async Task<IActionResult> GetByFromCity([FromBody] CitySearchRequest request)
         {
-            var response = await _scheduleService.GetByFromCityAsync(fromCity);
-            return Ok(response);
+            try
+            {
+                if (string.IsNullOrWhiteSpace(request.City))
+                    return BadRequest(ApiResponse<string>.FailureResponse("City is required"));
+
+                var response = await _scheduleService.GetByFromCityAsync(request.City);
+                return Ok(response);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ApiResponse<string>.FailureResponse(ex.Message));
+            }
         }
 
         [AllowAnonymous]
-        [HttpGet("to/{toCity}")]
-        public async Task<IActionResult> GetByToCity(string toCity)
+        [HttpPost("search-by-to-city")]
+        public async Task<IActionResult> GetByToCity([FromBody] CitySearchRequest request)
         {
-            var response = await _scheduleService.GetByToCityAsync(toCity);
-            return Ok(response);
+            try
+            {
+                if (string.IsNullOrWhiteSpace(request.City))
+                    return BadRequest(ApiResponse<string>.FailureResponse("City is required"));
+
+                var response = await _scheduleService.GetByToCityAsync(request.City);
+                return Ok(response);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ApiResponse<string>.FailureResponse(ex.Message));
+            }
         }
 
         [AllowAnonymous]
-        [HttpGet("search")] 
-        public async Task<IActionResult> Search(
-            [FromQuery] string fromCity,
-            [FromQuery] string toCity,
-            [FromQuery] DateTime travelDate)
+        [HttpPost("search")]
+        public async Task<IActionResult> Search([FromBody] ScheduleSearchRequest request)
         {
-            var response = await _scheduleService
-                .SearchSchedulesAsync(fromCity, toCity, travelDate);
+            try
+            {
+                var response = await _scheduleService.SearchSchedulesAsync(
+                    request.FromCity,
+                    request.ToCity,
+                    request.TravelDate);
 
-            return Ok(response);
+                return Ok(response);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ApiResponse<string>.FailureResponse(ex.Message));
+            }
         }
     }
 }

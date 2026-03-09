@@ -14,6 +14,8 @@ namespace BusTicketingSystem.Data
         public DbSet<Role> Roles { get; set; }
         public DbSet<Bus> Buses { get; set; }
         public DbSet<AuditLog> AuditLogs { get; set; }
+        public DbSet<Source> Sources { get; set; }
+        public DbSet<Destination> Destinations { get; set; }
 
         public DbSet<Models.Route> Routes { get; set; }
         public DbSet<Schedule> Schedules { get; set; }

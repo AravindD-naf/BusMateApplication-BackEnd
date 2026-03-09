@@ -1,6 +1,7 @@
 ﻿using Asp.Versioning;
 using BusTicketingSystem.DTOs.Requests;
 using BusTicketingSystem.DTOs.Responses;
+using BusTicketingSystem.Helpers;
 using BusTicketingSystem.Interfaces.Services;
 using BusTicketingSystem.Services;
 using Microsoft.AspNetCore.Authorization;
@@ -22,19 +23,36 @@ namespace BusTicketingSystem.Controllers
         }
 
         [AllowAnonymous]
-        [HttpGet]
-        public async Task<IActionResult> GetAll(int pageNumber = 1, int pageSize = 10)
+        [HttpPost("get-all")]
+        public async Task<IActionResult> GetAll([FromBody] PaginationRequest request)
         {
-            var response = await _routeService.GetAllRoutesAsync(pageNumber, pageSize);
-            return Ok(response);
+            try
+            {
+                if (request.PageNumber < 1) request.PageNumber = 1;
+                if (request.PageSize < 1) request.PageSize = 10;
+
+                var response = await _routeService.GetAllRoutesAsync(request.PageNumber, request.PageSize);
+                return Ok(response);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ApiResponse<string>.FailureResponse(ex.Message));
+            }
         }
 
         [AllowAnonymous]
-        [HttpGet("{id}")]
+        [HttpPost("{id}")]
         public async Task<IActionResult> GetById(int id)
         {
-            var response = await _routeService.GetRouteByIdAsync(id);
-            return Ok(response);
+            try
+            {
+                var response = await _routeService.GetRouteByIdAsync(id);
+                return Ok(response);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ApiResponse<string>.FailureResponse(ex.Message));
+            }
         }
 
         [Authorize(Roles = "Admin")]
@@ -77,43 +95,76 @@ namespace BusTicketingSystem.Controllers
         }
 
         [AllowAnonymous]
-        [HttpGet("by-source")]
-        public async Task<IActionResult> GetBySource(
-            [FromQuery] string source,
-            int pageNumber = 1,
-            int pageSize = 10)
+        [HttpPost("search-by-source")]
+        public async Task<IActionResult> GetBySource([FromBody] RouteSourceSearchRequest request)
         {
-            var response = await _routeService
-                .GetRoutesBySourceAsync(source, pageNumber, pageSize);
+            try
+            {
+                if (string.IsNullOrWhiteSpace(request.Source))
+                    return BadRequest(ApiResponse<string>.FailureResponse("Source is required"));
 
-            return Ok(response);
+                if (request.PageNumber < 1) request.PageNumber = 1;
+                if (request.PageSize < 1) request.PageSize = 10;
+
+                var response = await _routeService.GetRoutesBySourceAsync(
+                    request.Source,
+                    request.PageNumber,
+                    request.PageSize);
+
+                return Ok(response);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ApiResponse<string>.FailureResponse(ex.Message));
+            }
         }
 
         [AllowAnonymous]
-        [HttpGet("by-destination")]
-        public async Task<IActionResult> GetByDestination(
-            [FromQuery] string destination,
-            int pageNumber = 1,
-            int pageSize = 10)
+        [HttpPost("search-by-destination")]
+        public async Task<IActionResult> GetByDestination([FromBody] RouteDestinationSearchRequest request)
         {
-            var response = await _routeService
-                .GetRoutesByDestinationAsync(destination, pageNumber, pageSize);
+            try
+            {
+                if (string.IsNullOrWhiteSpace(request.Destination))
+                    return BadRequest(ApiResponse<string>.FailureResponse("Destination is required"));
 
-            return Ok(response);
+                if (request.PageNumber < 1) request.PageNumber = 1;
+                if (request.PageSize < 1) request.PageSize = 10;
+
+                var response = await _routeService.GetRoutesByDestinationAsync(
+                    request.Destination,
+                    request.PageNumber,
+                    request.PageSize);
+
+                return Ok(response);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ApiResponse<string>.FailureResponse(ex.Message));
+            }
         }
 
         [AllowAnonymous]
-        [HttpGet("search")]
-        public async Task<IActionResult> Search(
-            [FromQuery] string? source,
-            [FromQuery] string? destination,
-            int pageNumber = 1,
-            int pageSize = 10)
+        [HttpPost("search")]
+        public async Task<IActionResult> Search([FromBody] RouteAdvancedSearchRequest request)
         {
-            var response = await _routeService
-                .SearchRoutesAsync(source, destination, pageNumber, pageSize);
+            try
+            {
+                if (request.PageNumber < 1) request.PageNumber = 1;
+                if (request.PageSize < 1) request.PageSize = 10;
 
-            return Ok(response);
+                var response = await _routeService.SearchRoutesAsync(
+                    request.Source,
+                    request.Destination,
+                    request.PageNumber,
+                    request.PageSize);
+
+                return Ok(response);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ApiResponse<string>.FailureResponse(ex.Message));
+            }
         }
 
 

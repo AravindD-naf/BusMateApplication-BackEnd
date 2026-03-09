@@ -1,4 +1,5 @@
 ﻿using Asp.Versioning;
+using BusTicketingSystem.DTOs.Requests;
 using BusTicketingSystem.Helpers;
 using BusTicketingSystem.Interfaces.Services;
 using Microsoft.AspNetCore.Authorization;
@@ -19,25 +20,34 @@ namespace BusTicketingSystem.Controllers
             _auditService = auditService;
         }
 
-        [HttpGet]
-        public async Task<IActionResult> GetLogs(
-            int pageNumber = 1,
-            int pageSize = 10,
-            string? entityName = null,
-            int? userId = null,
-            DateTime? fromDate = null,
-            DateTime? toDate = null)
+        [HttpPost("get-all")]
+        public async Task<IActionResult> GetLogs([FromBody] AuditLogSearchRequest request)
         {
-            var (logs, totalCount) = await _auditService.GetPagedLogsAsync(
-                pageNumber, pageSize, entityName, userId, fromDate, toDate);
-
-            return Ok(ApiResponse<object>.SuccessResponse(new
+            try
             {
-                totalCount,
-                pageNumber,
-                pageSize,
-                data = logs
-            }));
+                if (request.PageNumber < 1) request.PageNumber = 1;
+                if (request.PageSize < 1) request.PageSize = 10;
+
+                var (logs, totalCount) = await _auditService.GetPagedLogsAsync(
+                    request.PageNumber, 
+                    request.PageSize, 
+                    request.EntityName, 
+                    request.UserId, 
+                    request.FromDate, 
+                    request.ToDate);
+
+                return Ok(ApiResponse<object>.SuccessResponse("Audit logs retrieved successfully", new
+                {
+                    totalCount,
+                    pageNumber = request.PageNumber,
+                    pageSize = request.PageSize,
+                    data = logs
+                }));
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ApiResponse<string>.FailureResponse(ex.Message));
+            }
         }
     }
 }

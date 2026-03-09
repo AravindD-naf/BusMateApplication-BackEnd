@@ -1,4 +1,6 @@
-﻿using BusTicketingSystem.DTOs.Requests;
+﻿using BusTicketingSystem.DTOs;
+using BusTicketingSystem.DTOs.Requests;
+using BusTicketingSystem.Helpers;
 using BusTicketingSystem.Interfaces.Services;
 using BusTicketingSystem.Models;
 using Microsoft.AspNetCore.Authorization;
@@ -34,17 +36,20 @@ namespace BusTicketingSystem.Controllers
         #region Schedule Browsing Endpoints
 
         [AllowAnonymous]
-        [HttpGet("schedules")]
-        public async Task<IActionResult> GetSchedules(int pageNumber = 1, int pageSize = 10)
+        [HttpPost("schedules/get-all")]
+        public async Task<IActionResult> GetSchedules([FromBody] PaginationRequest request)
         {
             try
             {
-                var result = await _scheduleService.GetAllAsync(pageNumber, pageSize);
+                if (request.PageNumber < 1) request.PageNumber = 1;
+                if (request.PageSize < 1) request.PageSize = 10;
+
+                var result = await _scheduleService.GetAllAsync(request.PageNumber, request.PageSize);
                 return Ok(result);
             }
             catch (Exception ex)
             {
-                return BadRequest(new ApiResponse<string>
+                return StatusCode(500, new ApiResponse<string>
                 {
                     Success = false,
                     Message = ex.Message,
@@ -54,21 +59,18 @@ namespace BusTicketingSystem.Controllers
         }
 
         [AllowAnonymous]
-        [HttpGet("schedules/search")]
-        public async Task<IActionResult> SearchSchedules(
-            [FromQuery] string fromCity,
-            [FromQuery] string toCity,
-            [FromQuery] DateTime travelDate)
+        [HttpPost("schedules/search")]
+        public async Task<IActionResult> SearchSchedules([FromBody] ScheduleSearchRequest request)
         {
             try
             {
                 var result = await _scheduleService
-                    .SearchSchedulesAsync(fromCity, toCity, travelDate);
+                    .SearchSchedulesAsync(request.FromCity, request.ToCity, request.TravelDate);
                 return Ok(result);
             }
             catch (Exception ex)
             {
-                return BadRequest(new ApiResponse<string>
+                return StatusCode(500, new ApiResponse<string>
                 {
                     Success = false,
                     Message = ex.Message,
@@ -82,7 +84,7 @@ namespace BusTicketingSystem.Controllers
         #region Seat Management Endpoints
 
         [Authorize]
-        [HttpGet("seats/{scheduleId}")]
+        [HttpPost("seats/{scheduleId}")]
         public async Task<IActionResult> GetSeatLayout(int scheduleId)
         {
             try
@@ -92,7 +94,7 @@ namespace BusTicketingSystem.Controllers
             }
             catch (Exception ex)
             {
-                return BadRequest(new ApiResponse<string>
+                return StatusCode(500, new ApiResponse<string>
                 {
                     Success = false,
                     Message = ex.Message,
@@ -223,11 +225,14 @@ namespace BusTicketingSystem.Controllers
 
 
         [Authorize(Roles = "Customer")]
-        [HttpGet("my")]
-        public async Task<IActionResult> MyBookings()
+        [HttpPost("my-bookings")]
+        public async Task<IActionResult> MyBookings([FromBody] PaginationRequest request)
         {
             try
             {
+                if (request.PageNumber < 1) request.PageNumber = 1;
+                if (request.PageSize < 1) request.PageSize = 10;
+
                 var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
 
                 if (userIdClaim == null)
@@ -247,7 +252,7 @@ namespace BusTicketingSystem.Controllers
             }
             catch (Exception ex)
             {
-                return BadRequest(new ApiResponse<string>
+                return StatusCode(500, new ApiResponse<string>
                 {
                     Success = false,
                     Message = ex.Message,
@@ -257,17 +262,20 @@ namespace BusTicketingSystem.Controllers
         }
 
         [Authorize(Roles = "Admin")]
-        [HttpGet]
-        public async Task<IActionResult> AllBookings()
+        [HttpPost("get-all")]
+        public async Task<IActionResult> AllBookings([FromBody] PaginationRequest request)
         {
             try
             {
+                if (request.PageNumber < 1) request.PageNumber = 1;
+                if (request.PageSize < 1) request.PageSize = 10;
+
                 return Ok(await _bookingService
                     .GetAllBookingsAsync());
             }
             catch (Exception ex)
             {
-                return BadRequest(new ApiResponse<string>
+                return StatusCode(500, new ApiResponse<string>
                 {
                     Success = false,
                     Message = ex.Message,
@@ -277,7 +285,7 @@ namespace BusTicketingSystem.Controllers
         }
 
         [Authorize(Roles = "Admin,Customer")]
-        [HttpGet("{id}")]
+        [HttpPost("{id}")]
         public async Task<IActionResult> GetBookingById(int id)
         {
             try
@@ -287,7 +295,7 @@ namespace BusTicketingSystem.Controllers
             }
             catch (Exception ex)
             {
-                return BadRequest(new ApiResponse<string>
+                return StatusCode(500, new ApiResponse<string>
                 {
                     Success = false,
                     Message = ex.Message,

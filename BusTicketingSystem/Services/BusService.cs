@@ -41,7 +41,7 @@ namespace BusTicketingSystem.Services
                 BusType = request.BusType,
                 TotalSeats = request.TotalSeats,
                 OperatorName = request.OperatorName.Trim(),
-                IsActive = true,
+                IsActive = false,
                 IsDeleted = false,
                 CreatedAt = DateTime.UtcNow
             };

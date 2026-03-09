@@ -38,6 +38,11 @@ builder.Services.AddScoped<ICancellationPolicyRepository, CancellationPolicyRepo
 builder.Services.AddScoped<IPaymentService, PaymentService>();
 builder.Services.AddScoped<IPassengerService, PassengerService>();
 
+builder.Services.AddScoped<ISourceRepository, SourceRepository>();
+builder.Services.AddScoped<SourceService>();
+builder.Services.AddScoped<IDestinationRepository, DestinationRepository>();
+builder.Services.AddScoped<DestinationService>();
+
 builder.Services.AddScoped<IErrorLogService, ErrorLogService>();
 
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
