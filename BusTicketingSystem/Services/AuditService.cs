@@ -6,7 +6,7 @@ using System.Text.Encodings.Web;
 using System.Text.Json;
 
 namespace BusTicketingSystem.Services
-{
+{   
     public class AuditService : IAuditService
     {
         private readonly IAuditRepository _auditRepository;

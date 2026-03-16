@@ -20,6 +20,10 @@ namespace BusTicketingSystem.Services
             if (string.IsNullOrWhiteSpace(request.SourceName))
                 throw new BadRequestException("Source name is required.");
 
+            if (await _sourceRepository.ExistsByNameAsync(request.SourceName.Trim()))
+                throw new BadRequestException("Source name already exists.");
+
+
             var source = new Source
             {
                 SourceName = request.SourceName.Trim(),
@@ -28,6 +32,7 @@ namespace BusTicketingSystem.Services
                 IsDeleted = false,
                 CreatedAt = DateTime.UtcNow
             };
+
 
             await _sourceRepository.CreateAsync(source);
             return MapToResponse(source);

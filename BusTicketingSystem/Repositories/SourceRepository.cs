@@ -9,6 +9,7 @@ namespace BusTicketingSystem.Repositories
         Task<Source> GetByIdAsync(int id);
         Task<List<Source>> GetAllAsync(int pageNumber, int pageSize);
         Task CreateAsync(Source source);
+        Task<bool> ExistsByNameAsync(string sourcename);
         Task UpdateAsync(Source source);
         Task DeleteAsync(int id);
     }
@@ -43,6 +44,11 @@ namespace BusTicketingSystem.Repositories
         {
             _dbContext.Sources.Add(source);
             await _dbContext.SaveChangesAsync();
+        }
+
+        public async Task<bool> ExistsByNameAsync(string sourcename)
+        {
+            return await _dbContext.Sources.AnyAsync(s => s.SourceName.ToLower() == sourcename.ToLower() && !s.IsDeleted);
         }
 
         public async Task UpdateAsync(Source source)

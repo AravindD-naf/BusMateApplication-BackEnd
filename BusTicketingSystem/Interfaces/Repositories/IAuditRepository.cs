@@ -7,7 +7,7 @@ namespace BusTicketingSystem.Interfaces.Repositories
         Task AddAsync(AuditLog log);
 
         Task<(List<AuditLog>, int totalCount)> GetPagedAsync(
-            int pageNumber,
+            int pageNumber, 
             int pageSize,
             string? entityName,
             int? userId,
